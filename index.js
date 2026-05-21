@@ -29,13 +29,37 @@ app.get('/test-db', async (req, res) => {
     .limit(5)
 
   if (error) {
-    return res.status(500).json({
-      error: error.message
-    })
+    return res.status(500).json({ error: error.message })
   }
 
   res.json({
     message: 'Supabase connected',
+    data
+  })
+})
+
+app.get('/test-insert', async (req, res) => {
+  const { data, error } = await supabase
+    .from('campaign_reports')
+    .insert([
+      {
+        campaign_name: 'test_campaign',
+        clicks: 10,
+        impressions: 100,
+        cost: 500,
+        conversions: 1,
+        ctr: 10,
+        report_date: new Date().toISOString().slice(0, 10)
+      }
+    ])
+    .select()
+
+  if (error) {
+    return res.status(500).json({ error: error.message })
+  }
+
+  res.json({
+    message: 'Test data inserted',
     data
   })
 })
