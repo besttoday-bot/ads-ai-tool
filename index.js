@@ -29,7 +29,9 @@ app.get('/test-db', async (req, res) => {
     .limit(5)
 
   if (error) {
-    return res.status(500).json({ error: error.message })
+    return res.status(500).json({
+      error: error.message
+    })
   }
 
   res.json({
@@ -40,15 +42,4 @@ app.get('/test-db', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
-})const express = require("express");
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.get("/", (req, res) => {
-  res.send("ads-ai-tool server is running");
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+})
