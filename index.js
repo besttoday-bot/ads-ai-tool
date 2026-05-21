@@ -1,67 +1,56 @@
 import 'dotenv/config'
 import express from 'express'
-import ws from 'ws'
 import OpenAI from 'openai'
-import { createClient } from '@supabase/supabase-js'
+import { GoogleAdsApi } from 'google-ads-api'
 
 const app = express()
-app.use(express.json())
 
 const PORT = process.env.PORT || 3000
+
+const client = new GoogleAdsApi({
+  client_id: process.env.GOOGLE_ADS_CLIENT_ID,
+  client_secret: process.env.GOOGLE_ADS_CLIENT_SECRET,
+  developer_token: process.env.GOOGLE_ADS_DEVELOPER_TOKEN
+})
+
+const customer = client.Customer({
+  customer_id: process.env.GOOGLE_ADS_CUSTOMER_ID,
+  refresh_token: process.env.GOOGLE_ADS_REFRESH_TOKEN,
+  login_customer_id: process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID
+})
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 })
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY,
-  {
-    realtime: {
-      transport: ws
-    }
-  }
-)
-
 app.get('/', (req, res) => {
-  res.send('ads-ai-tool server is running')
+  res.send('Google Ads AI Server Running')
 })
 
-app.get('/analyze', async (req, res) => {
-  const { data, error } = await supabase
-    .from('campaign_reports')
-    .select('*')
-    .order('id', { ascending: false })
-    .limit(5)
+app.get('/google-ads', async (req, res) => {
+  try {
+    const campaigns = await customer.query(`
+      SELECT
+        campaign.name,
+        metrics.impressions,
+        metrics.clicks,
+        metrics.cost_micros,
+        metrics.conversions,
+        metrics.ctr
+      FROM campaign
+      WHERE segments.date DURING LAST_30_DAYS
+      LIMIT 10
+    `)
 
-  if (error) {
-    return res.status(500).json({
+    res.json(campaigns)
+  } catch (error) {
+    console.error(error)
+    res.status(500).json({
       error: error.message
     })
   }
-
-  const prompt = `
-以下の広告データを分析して、
-改善提案をしてください。
-
-${JSON.stringify(data, null, 2)}
-`
-
-  const completion = await openai.chat.completions.create({
-    model: 'gpt-4.1-mini',
-    messages: [
-      {
-        role: 'user',
-        content: prompt
-      }
-    ]
-  })
-
-  res.json({
-    analysis: completion.choices[0].message.content
-  })
 })
 
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`)
+  console.log(`Server running on ${PORT}`)
 })
