@@ -1,12 +1,17 @@
 import 'dotenv/config'
 import express from 'express'
 import ws from 'ws'
+import OpenAI from 'openai'
 import { createClient } from '@supabase/supabase-js'
 
 const app = express()
 app.use(express.json())
 
 const PORT = process.env.PORT || 3000
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+})
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -22,45 +27,38 @@ app.get('/', (req, res) => {
   res.send('ads-ai-tool server is running')
 })
 
-app.get('/test-db', async (req, res) => {
+app.get('/analyze', async (req, res) => {
   const { data, error } = await supabase
     .from('campaign_reports')
     .select('*')
+    .order('id', { ascending: false })
     .limit(5)
 
   if (error) {
-    return res.status(500).json({ error: error.message })
+    return res.status(500).json({
+      error: error.message
+    })
   }
 
-  res.json({
-    message: 'Supabase connected',
-    data
-  })
-})
+  const prompt = `
+以下の広告データを分析して、
+改善提案をしてください。
 
-app.get('/test-insert', async (req, res) => {
-  const { data, error } = await supabase
-    .from('campaign_reports')
-    .insert([
+${JSON.stringify(data, null, 2)}
+`
+
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4.1-mini',
+    messages: [
       {
-        campaign_name: 'test_campaign',
-        clicks: 10,
-        impressions: 100,
-        cost: 500,
-        conversions: 1,
-        ctr: 10,
-        report_date: new Date().toISOString().slice(0, 10)
+        role: 'user',
+        content: prompt
       }
-    ])
-    .select()
-
-  if (error) {
-    return res.status(500).json({ error: error.message })
-  }
+    ]
+  })
 
   res.json({
-    message: 'Test data inserted',
-    data
+    analysis: completion.choices[0].message.content
   })
 })
 
