@@ -19,34 +19,46 @@ const supabase = createClient(
 
 async function getAccessToken() {
   const params = new URLSearchParams()
+
   params.append('client_id', process.env.GOOGLE_ADS_CLIENT_ID)
   params.append('client_secret', process.env.GOOGLE_ADS_CLIENT_SECRET)
   params.append('refresh_token', process.env.GOOGLE_ADS_REFRESH_TOKEN)
   params.append('grant_type', 'refresh_token')
 
-  const response = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: params
-  })
+  const response = await fetch(
+    'https://oauth2.googleapis.com/token',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: params
+    }
+  )
 
   const data = await response.json()
-  if (!response.ok) throw new Error(JSON.stringify(data))
+
+  if (!response.ok) {
+    throw new Error(JSON.stringify(data))
+  }
+
   return data.access_token
 }
 
-async function fetchGoogleAdsCampaigns() {
+async function fetchGoogleAdsCampaigns90Days() {
   const accessToken = await getAccessToken()
 
   const query = `
     SELECT
+      segments.date,
       campaign.id,
       campaign.name,
       metrics.impressions,
       metrics.clicks,
       metrics.ctr
     FROM campaign
-    LIMIT 10
+    WHERE segments.date DURING LAST_90_DAYS
+    ORDER BY segments.date DESC
   `
 
   const response = await fetch(
@@ -59,12 +71,18 @@ async function fetchGoogleAdsCampaigns() {
         'login-customer-id': process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ query })
+      body: JSON.stringify({
+        query
+      })
     }
   )
 
   const data = await response.json()
-  if (!response.ok) throw new Error(JSON.stringify(data))
+
+  if (!response.ok) {
+    throw new Error(JSON.stringify(data))
+  }
+
   return data.results || []
 }
 
@@ -74,16 +92,23 @@ app.get('/', (req, res) => {
 
 app.get('/google-ads', async (req, res) => {
   try {
-    const results = await fetchGoogleAdsCampaigns()
-    res.json({ results })
+    const results = await fetchGoogleAdsCampaigns90Days()
+
+    res.json({
+      count: results.length,
+      results
+    })
+
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    res.status(500).json({
+      error: error.message
+    })
   }
 })
 
 app.get('/sync-google-ads', async (req, res) => {
   try {
-    const results = await fetchGoogleAdsCampaigns()
+    const results = await fetchGoogleAdsCampaigns90Days()
 
     const rows = results.map((item) => ({
       campaign_name: item.campaign.name,
@@ -92,7 +117,7 @@ app.get('/sync-google-ads', async (req, res) => {
       ctr: Number(item.metrics.ctr || 0),
       cost: 0,
       conversions: 0,
-      report_date: new Date().toISOString().slice(0, 10)
+      report_date: item.segments.date
     }))
 
     const { data, error } = await supabase
@@ -100,15 +125,19 @@ app.get('/sync-google-ads', async (req, res) => {
       .insert(rows)
       .select()
 
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     res.json({
-      message: 'Google Ads data synced to Supabase',
-      count: data.length,
-      data
+      message: '90 days Google Ads data synced',
+      inserted: data.length
     })
+
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    res.status(500).json({
+      error: error.message
+    })
   }
 })
 
@@ -117,24 +146,29 @@ app.get('/analyze-google-ads', async (req, res) => {
     const { data, error } = await supabase
       .from('campaign_reports')
       .select('*')
-      .order('id', { ascending: false })
-      .limit(20)
+      .order('report_date', { ascending: false })
+      .limit(300)
 
-    if (error) throw error
+    if (error) {
+      throw error
+    }
 
     const prompt = `
 あなたはGoogle広告運用の専門家です。
-以下のGoogle広告キャンペーンデータを分析してください。
 
-分析してほしい内容：
-1. 良いキャンペーン
-2. 改善が必要なキャンペーン
-3. CTRの比較
-4. クリック数と表示回数から見た改善案
-5. 次にやるべき具体的な施策
-6. 経営者向けの短いまとめ
+以下は過去90日間の日別Google広告データです。
 
-広告データ：
+分析してください。
+
+分析内容:
+1. CTR推移
+2. 悪化傾向
+3. 改善傾向
+4. キャンペーン比較
+5. 今後の改善施策
+6. 経営者向け要約
+
+データ:
 ${JSON.stringify(data, null, 2)}
 `
 
@@ -149,12 +183,13 @@ ${JSON.stringify(data, null, 2)}
     })
 
     res.json({
-      message: 'Google Ads analysis completed',
-      analysis: completion.choices[0].message.content,
-      data
+      analysis: completion.choices[0].message.content
     })
+
   } catch (error) {
-    res.status(500).json({ error: error.message })
+    res.status(500).json({
+      error: error.message
+    })
   }
 })
 
