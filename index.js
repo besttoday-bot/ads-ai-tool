@@ -2,7 +2,6 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 import express from 'express'
-import OpenAI from 'openai'
 import { GoogleAdsApi } from 'google-ads-api'
 
 const app = express()
@@ -18,10 +17,6 @@ const customer = client.Customer({
   customer_id: process.env.GOOGLE_ADS_CUSTOMER_ID,
   refresh_token: process.env.GOOGLE_ADS_REFRESH_TOKEN,
   login_customer_id: process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID,
-})
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
 })
 
 app.get('/', (req, res) => {
@@ -41,21 +36,19 @@ app.get('/env-check', (req, res) => {
 
 app.get('/google-ads', async (req, res) => {
   try {
-    const campaigns = await customer.query(`
-      SELECT
-        campaign.id,
-        campaign.name,
-        metrics.impressions,
-        metrics.clicks,
-        metrics.ctr
-      FROM campaign
-      LIMIT 10
-    `)
+    const campaigns = await customer.report({
+      entity: 'campaign',
+      attributes: ['campaign.id', 'campaign.name'],
+      metrics: [
+        'metrics.impressions',
+        'metrics.clicks',
+        'metrics.ctr',
+      ],
+      limit: 10,
+    })
 
     res.json(campaigns)
   } catch (error) {
-    console.error('GOOGLE ADS ERROR FULL:', error)
-
     res.status(500).json({
       message: 'Google Ads API error',
       error_message: error.message,
