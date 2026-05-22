@@ -32,17 +32,15 @@ app.get('/', (req, res) => {
 app.get('/google-ads', async (req, res) => {
   try {
     const campaigns = await customer.query(`
-      SELECT
-        campaign.name,
-        metrics.impressions,
-        metrics.clicks,
-        metrics.cost_micros,
-        metrics.conversions,
-        metrics.ctr
-      FROM campaign
-      WHERE segments.date DURING LAST_30_DAYS
-      LIMIT 10
-    `)
+  SELECT
+    campaign.id,
+    campaign.name,
+    metrics.impressions,
+    metrics.clicks,
+    metrics.ctr
+  FROM campaign
+  LIMIT 10
+`)
 
     res.json(campaigns)
 
