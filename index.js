@@ -1,4 +1,6 @@
-import 'dotenv/config'
+import dotenv from 'dotenv'
+dotenv.config()
+
 import express from 'express'
 import OpenAI from 'openai'
 import { GoogleAdsApi } from 'google-ads-api'
@@ -10,17 +12,17 @@ const PORT = process.env.PORT || 3000
 const client = new GoogleAdsApi({
   client_id: process.env.GOOGLE_ADS_CLIENT_ID,
   client_secret: process.env.GOOGLE_ADS_CLIENT_SECRET,
-  developer_token: process.env.GOOGLE_ADS_DEVELOPER_TOKEN
+  developer_token: process.env.GOOGLE_ADS_DEVELOPER_TOKEN,
 })
 
 const customer = client.Customer({
   customer_id: process.env.GOOGLE_ADS_CUSTOMER_ID,
   refresh_token: process.env.GOOGLE_ADS_REFRESH_TOKEN,
-  login_customer_id: process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID
+  login_customer_id: process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID,
 })
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
+  apiKey: process.env.OPENAI_API_KEY,
 })
 
 app.get('/', (req, res) => {
@@ -43,10 +45,12 @@ app.get('/google-ads', async (req, res) => {
     `)
 
     res.json(campaigns)
+
   } catch (error) {
     console.error(error)
+
     res.status(500).json({
-      error: error.message
+      error: error.message,
     })
   }
 })
