@@ -2,59 +2,78 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 import express from 'express'
-import { GoogleAdsApi } from 'google-ads-api'
 
 const app = express()
 const PORT = process.env.PORT || 3000
 
-const client = new GoogleAdsApi({
-  client_id: process.env.GOOGLE_ADS_CLIENT_ID,
-  client_secret: process.env.GOOGLE_ADS_CLIENT_SECRET,
-  developer_token: process.env.GOOGLE_ADS_DEVELOPER_TOKEN,
-})
+async function getAccessToken() {
+  const params = new URLSearchParams()
+  params.append('client_id', process.env.GOOGLE_ADS_CLIENT_ID)
+  params.append('client_secret', process.env.GOOGLE_ADS_CLIENT_SECRET)
+  params.append('refresh_token', process.env.GOOGLE_ADS_REFRESH_TOKEN)
+  params.append('grant_type', 'refresh_token')
 
-const customer = client.Customer({
-  customer_id: process.env.GOOGLE_ADS_CUSTOMER_ID,
-  refresh_token: process.env.GOOGLE_ADS_REFRESH_TOKEN,
-  login_customer_id: process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID,
-})
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params
+  })
+
+  const data = await response.json()
+
+  if (!response.ok) {
+    throw new Error(JSON.stringify(data))
+  }
+
+  return data.access_token
+}
 
 app.get('/', (req, res) => {
   res.send('Google Ads AI Server Running')
 })
 
-app.get('/env-check', (req, res) => {
-  res.json({
-    GOOGLE_ADS_CLIENT_ID: !!process.env.GOOGLE_ADS_CLIENT_ID,
-    GOOGLE_ADS_CLIENT_SECRET: !!process.env.GOOGLE_ADS_CLIENT_SECRET,
-    GOOGLE_ADS_DEVELOPER_TOKEN: !!process.env.GOOGLE_ADS_DEVELOPER_TOKEN,
-    GOOGLE_ADS_REFRESH_TOKEN: !!process.env.GOOGLE_ADS_REFRESH_TOKEN,
-    GOOGLE_ADS_LOGIN_CUSTOMER_ID: process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID,
-    GOOGLE_ADS_CUSTOMER_ID: process.env.GOOGLE_ADS_CUSTOMER_ID,
-  })
-})
-
 app.get('/google-ads', async (req, res) => {
   try {
-    const campaigns = await customer.report({
-      entity: 'campaign',
-      attributes: ['campaign.id', 'campaign.name'],
-      metrics: [
-        'metrics.impressions',
-        'metrics.clicks',
-        'metrics.ctr',
-      ],
-      limit: 10,
-    })
+    const accessToken = await getAccessToken()
 
-    res.json(campaigns)
+    const query = `
+      SELECT
+        campaign.id,
+        campaign.name,
+        metrics.impressions,
+        metrics.clicks,
+        metrics.ctr
+      FROM campaign
+      LIMIT 10
+    `
+
+    const response = await fetch(
+      `https://googleads.googleapis.com/v19/customers/${process.env.GOOGLE_ADS_CUSTOMER_ID}/googleAds:search`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'developer-token': process.env.GOOGLE_ADS_DEVELOPER_TOKEN,
+          'login-customer-id': process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          query,
+          pageSize: 10
+        })
+      }
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      return res.status(500).json(data)
+    }
+
+    res.json(data)
   } catch (error) {
     res.status(500).json({
-      message: 'Google Ads API error',
-      error_message: error.message,
-      error_name: error.name,
-      error_code: error.code,
-      raw_error: JSON.stringify(error, Object.getOwnPropertyNames(error)),
+      error: error.message
     })
   }
 })
