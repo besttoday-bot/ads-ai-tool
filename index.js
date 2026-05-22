@@ -57,7 +57,7 @@ async function fetchGoogleAdsCampaigns90Days() {
       metrics.clicks,
       metrics.ctr
     FROM campaign
-    WHERE segments.date DURING LAST_90_DAYS
+    WHERE segments.date BETWEEN '2026-02-22' AND '2026-05-22'
     ORDER BY segments.date DESC
   `
 
