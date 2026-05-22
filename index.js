@@ -2,10 +2,15 @@ import dotenv from 'dotenv'
 dotenv.config()
 
 import express from 'express'
+import OpenAI from 'openai'
 import { createClient } from '@supabase/supabase-js'
 
 const app = express()
 const PORT = process.env.PORT || 3000
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
+})
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -100,6 +105,52 @@ app.get('/sync-google-ads', async (req, res) => {
     res.json({
       message: 'Google Ads data synced to Supabase',
       count: data.length,
+      data
+    })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+app.get('/analyze-google-ads', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('campaign_reports')
+      .select('*')
+      .order('id', { ascending: false })
+      .limit(20)
+
+    if (error) throw error
+
+    const prompt = `
+あなたはGoogle広告運用の専門家です。
+以下のGoogle広告キャンペーンデータを分析してください。
+
+分析してほしい内容：
+1. 良いキャンペーン
+2. 改善が必要なキャンペーン
+3. CTRの比較
+4. クリック数と表示回数から見た改善案
+5. 次にやるべき具体的な施策
+6. 経営者向けの短いまとめ
+
+広告データ：
+${JSON.stringify(data, null, 2)}
+`
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4.1-mini',
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
+    })
+
+    res.json({
+      message: 'Google Ads analysis completed',
+      analysis: completion.choices[0].message.content,
       data
     })
   } catch (error) {
