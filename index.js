@@ -48,7 +48,7 @@ app.get('/google-ads', async (req, res) => {
     `
 
     const response = await fetch(
-      `https://googleads.googleapis.com/v19/customers/${process.env.GOOGLE_ADS_CUSTOMER_ID}/googleAds:search`,
+      `https://googleads.googleapis.com/v24/customers/${process.env.GOOGLE_ADS_CUSTOMER_ID}/googleAds:search`,
       {
         method: 'POST',
         headers: {
