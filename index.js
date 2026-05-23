@@ -196,3 +196,60 @@ ${JSON.stringify(data, null, 2)}
 app.listen(PORT, () => {
   console.log(`Server running on ${PORT}`)
 })
+
+app.get('/trend-analysis', async (req, res) => {
+  try {
+
+    const { data, error } = await supabase
+      .from('campaign_reports')
+      .select('*')
+      .order('report_date', { ascending: true })
+
+    if (error) {
+      throw error
+    }
+
+    const prompt = `
+あなたはGoogle広告のプロマーケターです。
+
+以下は90日分の日別広告データです。
+
+重要なのは「推移分析」です。
+
+分析してください。
+
+分析内容:
+1. CTR悪化傾向
+2. CTR改善傾向
+3. クリック減少傾向
+4. キャンペーン別比較
+5. 異常値
+6. 改善提案
+7. 今すぐやるべき施策
+8. 経営者向けまとめ
+
+データ:
+${JSON.stringify(data, null, 2)}
+`
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4.1-mini',
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
+    })
+
+    res.json({
+      analysis: completion.choices[0].message.content
+    })
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message
+    })
+  }
+})
+
