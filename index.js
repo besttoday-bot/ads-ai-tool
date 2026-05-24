@@ -253,3 +253,56 @@ ${JSON.stringify(data, null, 2)}
   }
 })
 
+
+app.get('/generate-ads-copy', async (req, res) => {
+  try {
+
+    const { data, error } = await supabase
+      .from('campaign_reports')
+      .select('*')
+      .order('ctr', { ascending: true })
+      .limit(5)
+
+    if (error) {
+      throw error
+    }
+
+    const prompt = `
+あなたはGoogle広告のプロマーケターです。
+
+以下はCTRが低い広告キャンペーンです。
+
+改善のためのGoogle検索広告文を生成してください。
+
+出力:
+1. タイトル3案
+2. 説明文3案
+3. CTA
+4. 改善理由
+5. ターゲット
+
+データ:
+${JSON.stringify(data, null, 2)}
+`
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4.1-mini',
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
+    })
+
+    res.json({
+      ads_copy: completion.choices[0].message.content
+    })
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message
+    })
+  }
+})
+
