@@ -1473,3 +1473,94 @@ ${JSON.stringify(data, null, 2)}
   }
 })
 
+
+app.get('/negative-keyword-suggestions', async (req, res) => {
+  try {
+
+    const { data, error } = await supabase
+      .from('search_term_reports')
+      .select('*')
+      .order('impressions', { ascending: false })
+      .limit(300)
+
+    if (error) {
+      throw error
+    }
+
+    const prompt = `
+あなたはGoogle広告の除外キーワード最適化専門家です。
+
+以下はGoogle広告の検索語句データです。
+
+目的:
+FileMaker開発・保守案件獲得
+
+分析してください。
+
+出力内容:
+1. 除外推奨キーワード
+2. 除外理由
+3. 無駄クリック候補
+4. 低品質検索意図
+5. 今後追加すべき除外キーワード
+6. 残すべき検索語句
+7. 広告費浪費リスク
+8. 経営者向けまとめ
+
+重要:
+- 「無料」
+- 「求人」
+- 「勉強」
+- 「使い方」
+- 「チュートリアル」
+- 「初心者」
+
+などは低品質候補。
+
+BtoB問い合わせ獲得視点で分析してください。
+
+データ:
+${JSON.stringify(data, null, 2)}
+`
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4.1-mini',
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
+    })
+
+    const reportContent = completion.choices[0].message.content
+
+    const { data: savedReport, error: saveError } = await supabase
+      .from('ai_reports')
+      .insert([
+        {
+          report_type: 'negative_keyword_analysis',
+          report_content: reportContent
+        }
+      ])
+      .select()
+
+    if (saveError) {
+      throw saveError
+    }
+
+    res.json({
+      message: 'Negative keyword analysis completed',
+      analysis: reportContent,
+      saved: savedReport
+    })
+
+  } catch(error) {
+
+    res.status(500).json({
+      error: error.message
+    })
+
+  }
+})
+
