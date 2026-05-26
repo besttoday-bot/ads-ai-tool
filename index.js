@@ -893,7 +893,6 @@ app.get('/sync-keywords', async (req, res) => {
       SELECT
         segments.date,
         campaign.name,
-        ad_group_criterion.keyword.text,
         ad_group_criterion.keyword.match_type,
         metrics.impressions,
         metrics.clicks,
@@ -1312,7 +1311,6 @@ app.get('/sync-search-terms', async (req, res) => {
       SELECT
         segments.date,
         campaign.name,
-        ad_group_criterion.keyword.text,
         search_term_view.search_term,
         metrics.impressions,
         metrics.clicks,
