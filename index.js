@@ -147,7 +147,7 @@ app.get('/analyze-google-ads', async (req, res) => {
       .from('campaign_reports')
       .select('*')
       .order('report_date', { ascending: false })
-      .limit(300)
+      .limit(80)
 
     if (error) {
       throw error
@@ -1481,7 +1481,7 @@ app.get('/negative-keyword-suggestions', async (req, res) => {
       .from('search_term_reports')
       .select('*')
       .order('impressions', { ascending: false })
-      .limit(300)
+      .limit(80)
 
     if (error) {
       throw error
