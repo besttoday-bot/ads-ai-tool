@@ -956,3 +956,270 @@ app.get('/sync-keywords', async (req, res) => {
   }
 })
 
+
+app.get('/keywords-dashboard', async (req, res) => {
+  try {
+
+    const { start, end, campaign, keyword } = req.query
+
+    let query = supabase
+      .from('keyword_reports')
+      .select('*')
+      .order('report_date', { ascending: true })
+
+    if (start) {
+      query = query.gte('report_date', start)
+    }
+
+    if (end) {
+      query = query.lte('report_date', end)
+    }
+
+    if (campaign) {
+      query = query.eq('campaign_name', campaign)
+    }
+
+    if (keyword) {
+      query = query.eq('keyword_text', keyword)
+    }
+
+    const { data: reports, error } = await query
+
+    if (error) throw error
+
+    const { data: keywordOptions } = await supabase
+      .from('keyword_reports')
+      .select('keyword_text')
+
+    const { data: campaignOptions } = await supabase
+      .from('keyword_reports')
+      .select('campaign_name')
+
+    const uniqueKeywords = [...new Set(
+      (keywordOptions || []).map(r => r.keyword_text)
+    )]
+
+    const uniqueCampaigns = [...new Set(
+      (campaignOptions || []).map(r => r.campaign_name)
+    )]
+
+    const labels = reports.map(r => r.report_date)
+
+    const ctrData = reports.map(r => Number(r.ctr) * 100)
+
+    const clickData = reports.map(r => Number(r.clicks))
+
+    res.send(`
+<html>
+<head>
+
+<meta charset="UTF-8">
+
+<title>キーワード分析ダッシュボード</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+  font-family:sans-serif;
+  padding:24px;
+  background:#f5f5f5;
+}
+
+.card{
+  background:white;
+  padding:24px;
+  border-radius:12px;
+  margin-bottom:24px;
+}
+
+form{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  align-items:end;
+}
+
+label{
+  display:block;
+  margin-bottom:4px;
+  font-weight:bold;
+}
+
+input,select,button{
+  padding:8px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th,td{
+  border-bottom:1px solid #ddd;
+  padding:8px;
+  text-align:left;
+}
+
+th{
+  background:#eee;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>キーワード分析ダッシュボード</h1>
+
+<div class="card">
+
+<h2>検索条件</h2>
+
+<form method="GET" action="/keywords-dashboard">
+
+<div>
+<label>開始日</label>
+<input type="date" name="start" value="${start || ''}">
+</div>
+
+<div>
+<label>終了日</label>
+<input type="date" name="end" value="${end || ''}">
+</div>
+
+<div>
+<label>キャンペーン</label>
+
+<select name="campaign">
+
+<option value="">すべて</option>
+
+${uniqueCampaigns.map(name => `
+<option value="${name}" ${campaign === name ? 'selected' : ''}>
+${name}
+</option>
+`).join('')}
+
+</select>
+</div>
+
+<div>
+<label>キーワード</label>
+
+<select name="keyword">
+
+<option value="">すべて</option>
+
+${uniqueKeywords.map(name => `
+<option value="${name}" ${keyword === name ? 'selected' : ''}>
+${name}
+</option>
+`).join('')}
+
+</select>
+
+</div>
+
+<button type="submit">検索</button>
+
+</form>
+
+</div>
+
+<div class="card">
+
+<h2>CTR推移</h2>
+
+<canvas id="ctrChart"></canvas>
+
+</div>
+
+<div class="card">
+
+<h2>クリック推移</h2>
+
+<canvas id="clickChart"></canvas>
+
+</div>
+
+<div class="card">
+
+<h2>キーワードデータ</h2>
+
+<table>
+
+<tr>
+<th>日付</th>
+<th>キャンペーン</th>
+<th>キーワード</th>
+<th>Match Type</th>
+<th>表示回数</th>
+<th>クリック</th>
+<th>CTR</th>
+</tr>
+
+${reports.map(r => `
+<tr>
+<td>${r.report_date}</td>
+<td>${r.campaign_name}</td>
+<td>${r.keyword_text}</td>
+<td>${r.match_type}</td>
+<td>${r.impressions}</td>
+<td>${r.clicks}</td>
+<td>${(Number(r.ctr) * 100).toFixed(2)}%</td>
+</tr>
+`).join('')}
+
+</table>
+
+</div>
+
+<script>
+
+new Chart(document.getElementById('ctrChart'), {
+
+type:'line',
+
+data:{
+labels:${JSON.stringify(labels)},
+datasets:[{
+label:'CTR (%)',
+data:${JSON.stringify(ctrData)},
+borderWidth:2,
+tension:0.3
+}]
+}
+
+})
+
+new Chart(document.getElementById('clickChart'), {
+
+type:'bar',
+
+data:{
+labels:${JSON.stringify(labels)},
+datasets:[{
+label:'Clicks',
+data:${JSON.stringify(clickData)},
+borderWidth:1
+}]
+}
+
+})
+
+</script>
+
+</body>
+</html>
+    `)
+
+  } catch(error) {
+
+    res.status(500).send(error.message)
+
+  }
+})
+
