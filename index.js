@@ -445,3 +445,57 @@ app.get('/dashboard', async (req, res) => {
   }
 })
 
+
+app.get('/dashboard-v2', async (req, res) => {
+  try {
+    const { data: reports, error } = await supabase
+      .from('campaign_reports')
+      .select('*')
+      .order('report_date', { ascending: true })
+
+    if (error) throw error
+
+    const labels = reports.map(r => r.report_date)
+    const ctrData = reports.map(r => Number(r.ctr) * 100)
+
+    res.send(`
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>AI広告分析ダッシュボード v2</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 24px; background: #f5f5f5; }
+    .card { background: white; padding: 24px; border-radius: 12px; margin-bottom: 24px; }
+  </style>
+</head>
+<body>
+  <h1>AI広告分析ダッシュボード v2</h1>
+
+  <div class="card">
+    <h2>CTR推移</h2>
+    <canvas id="ctrChart"></canvas>
+  </div>
+
+  <script>
+    new Chart(document.getElementById('ctrChart'), {
+      type: 'line',
+      data: {
+        labels: ${JSON.stringify(labels)},
+        datasets: [{
+          label: 'CTR (%)',
+          data: ${JSON.stringify(ctrData)},
+          borderWidth: 2,
+          tension: 0.3
+        }]
+      }
+    })
+  </script>
+</body>
+</html>
+    `)
+  } catch (error) {
+    res.status(500).send(error.message)
+  }
+})
+
