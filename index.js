@@ -1564,3 +1564,122 @@ ${JSON.stringify(data, null, 2)}
   }
 })
 
+
+app.get('/search-terms-dashboard', async (req, res) => {
+  try {
+    const { start, end, term } = req.query
+
+    let query = supabase
+      .from('search_term_reports')
+      .select('*')
+      .order('report_date', { ascending: false })
+
+    if (start) {
+      query = query.gte('report_date', start)
+    }
+
+    if (end) {
+      query = query.lte('report_date', end)
+    }
+
+    if (term) {
+      query = query.ilike('search_term', `%${term}%`)
+    }
+
+    const { data: reports, error } = await query.limit(300)
+    if (error) throw error
+
+    const { data: aiReports, error: aiError } = await supabase
+      .from('ai_reports')
+      .select('*')
+      .eq('report_type', 'negative_keyword_analysis')
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    if (aiError) throw aiError
+
+    res.send(`
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>検索語句分析ダッシュボード</title>
+  <style>
+    body { font-family: sans-serif; padding: 24px; background: #f5f5f5; }
+    .card { background: white; padding: 24px; border-radius: 12px; margin-bottom: 24px; }
+    form { display: flex; gap: 12px; align-items: end; flex-wrap: wrap; }
+    label { display: block; font-weight: bold; margin-bottom: 4px; }
+    input, button { padding: 8px; font-size: 14px; }
+    table { width: 100%; border-collapse: collapse; background: white; }
+    th, td { border-bottom: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background: #eee; }
+    pre { white-space: pre-wrap; line-height: 1.6; }
+    .low { color: #c00; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>検索語句分析ダッシュボード</h1>
+
+  <div class="card">
+    <h2>検索条件</h2>
+    <form method="GET" action="/search-terms-dashboard">
+      <div>
+        <label>開始日</label>
+        <input type="date" name="start" value="${start || ''}">
+      </div>
+
+      <div>
+        <label>終了日</label>
+        <input type="date" name="end" value="${end || ''}">
+      </div>
+
+      <div>
+        <label>検索語句</label>
+        <input type="text" name="term" value="${term || ''}" placeholder="例: 無料 / 求人 / filemaker">
+      </div>
+
+      <button type="submit">検索</button>
+      <a href="/search-terms-dashboard">リセット</a>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>最新AI除外キーワード分析</h2>
+    <pre>${aiReports?.[0]?.report_content || 'まだ分析レポートがありません'}</pre>
+  </div>
+
+  <div class="card">
+    <h2>検索語句データ</h2>
+
+    <table>
+      <tr>
+        <th>日付</th>
+        <th>キャンペーン</th>
+        <th>検索語句</th>
+        <th>表示回数</th>
+        <th>クリック</th>
+        <th>CTR</th>
+      </tr>
+
+      ${(reports || []).map(r => `
+        <tr>
+          <td>${r.report_date}</td>
+          <td>${r.campaign_name}</td>
+          <td>${r.search_term}</td>
+          <td>${r.impressions}</td>
+          <td>${r.clicks}</td>
+          <td class="${Number(r.ctr) < 0.01 ? 'low' : ''}">
+            ${(Number(r.ctr) * 100).toFixed(2)}%
+          </td>
+        </tr>
+      `).join('')}
+    </table>
+  </div>
+</body>
+</html>
+    `)
+
+  } catch (error) {
+    res.status(500).send(error.message)
+  }
+})
+
