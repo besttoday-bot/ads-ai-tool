@@ -1302,3 +1302,94 @@ ${JSON.stringify(data, null, 2)}
   }
 })
 
+
+app.get('/sync-search-terms', async (req, res) => {
+  try {
+
+    const accessToken = await getAccessToken()
+
+    const query = `
+      SELECT
+        segments.date,
+        campaign.name,
+        ad_group_criterion.keyword.text,
+        search_term_view.search_term,
+        metrics.impressions,
+        metrics.clicks,
+        metrics.ctr
+      FROM search_term_view
+      WHERE segments.date BETWEEN '2026-02-22' AND '2026-05-22'
+      ORDER BY segments.date DESC
+    `
+
+    const response = await fetch(
+      `https://googleads.googleapis.com/v24/customers/${process.env.GOOGLE_ADS_CUSTOMER_ID}/googleAds:search`,
+      {
+        method: 'POST',
+
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'developer-token': process.env.GOOGLE_ADS_DEVELOPER_TOKEN,
+          'login-customer-id': process.env.GOOGLE_ADS_LOGIN_CUSTOMER_ID,
+          'Content-Type': 'application/json'
+        },
+
+        body: JSON.stringify({ query })
+      }
+    )
+
+    const json = await response.json()
+
+    if (!response.ok) {
+      throw new Error(JSON.stringify(json))
+    }
+
+    const rows = (json.results || []).map(item => ({
+
+      report_date: item.segments.date,
+
+      campaign_name: item.campaign.name,
+
+      keyword_text:
+        item.adGroupCriterion?.keyword?.text || '',
+
+      search_term:
+        item.searchTermView?.searchTerm || '',
+
+      impressions:
+        Number(item.metrics.impressions || 0),
+
+      clicks:
+        Number(item.metrics.clicks || 0),
+
+      ctr:
+        Number(item.metrics.ctr || 0),
+
+      cost: 0,
+      conversions: 0
+
+    }))
+
+    const { data, error } = await supabase
+      .from('search_term_reports')
+      .insert(rows)
+      .select()
+
+    if (error) {
+      throw error
+    }
+
+    res.json({
+      message: 'Search terms synced',
+      inserted: data.length
+    })
+
+  } catch(error) {
+
+    res.status(500).json({
+      error: error.message
+    })
+
+  }
+})
+
