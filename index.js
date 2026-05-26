@@ -499,3 +499,116 @@ app.get('/dashboard-v2', async (req, res) => {
   }
 })
 
+
+app.get('/dashboard-v3', async (req, res) => {
+  try {
+
+    const { data: reports, error } = await supabase
+      .from('campaign_reports')
+      .select('*')
+      .order('report_date', { ascending: true })
+
+    if (error) throw error
+
+    const grouped = {}
+
+    reports.forEach(r => {
+
+      if (!grouped[r.campaign_name]) {
+        grouped[r.campaign_name] = []
+      }
+
+      grouped[r.campaign_name].push({
+        x: r.report_date,
+        y: Number(r.ctr) * 100
+      })
+    })
+
+    const datasets = Object.keys(grouped).map((name, index) => ({
+      label: name,
+      data: grouped[name],
+      borderWidth: 2,
+      tension: 0.3
+    }))
+
+    res.send(`
+<html>
+<head>
+
+<meta charset="UTF-8">
+
+<title>AI広告分析ダッシュボード v3</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+  font-family:sans-serif;
+  padding:24px;
+  background:#f5f5f5;
+}
+
+.card{
+  background:white;
+  padding:24px;
+  border-radius:12px;
+  margin-bottom:24px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>AI広告分析ダッシュボード v3</h1>
+
+<div class="card">
+  <h2>キャンペーン別CTR推移</h2>
+  <canvas id="chart"></canvas>
+</div>
+
+<script>
+
+new Chart(document.getElementById('chart'), {
+
+  type:'line',
+
+  data:{
+    datasets:${JSON.stringify(datasets)}
+  },
+
+  options:{
+    parsing:false,
+
+    scales:{
+      x:{
+        type:'category'
+      },
+
+      y:{
+        beginAtZero:true,
+        title:{
+          display:true,
+          text:'CTR (%)'
+        }
+      }
+    }
+  }
+
+})
+
+</script>
+
+</body>
+</html>
+    `)
+
+  } catch(error) {
+
+    res.status(500).send(error.message)
+
+  }
+})
+
