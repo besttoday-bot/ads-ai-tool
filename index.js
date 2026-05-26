@@ -1781,3 +1781,180 @@ app.get('/search-terms-dashboard-v2', async (req, res) => {
   }
 })
 
+
+app.get('/ai-chat', (req, res) => {
+
+  res.send(`
+<html>
+<head>
+
+<meta charset="UTF-8">
+
+<title>AI広告アシスタント</title>
+
+<style>
+
+body{
+  font-family:sans-serif;
+  background:#f5f5f5;
+  padding:24px;
+}
+
+.card{
+  background:white;
+  padding:24px;
+  border-radius:12px;
+  max-width:900px;
+  margin:auto;
+}
+
+textarea{
+  width:100%;
+  height:120px;
+  padding:12px;
+  font-size:16px;
+}
+
+button{
+  margin-top:12px;
+  padding:12px 20px;
+  font-size:16px;
+}
+
+#response{
+  margin-top:24px;
+  white-space:pre-wrap;
+  line-height:1.7;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="card">
+
+<h1>AI広告アシスタント</h1>
+
+<p>
+広告データについてAIへ質問できます。
+</p>
+
+<textarea id="question"
+placeholder="例: CTRが悪い原因を教えて"></textarea>
+
+<br>
+
+<button onclick="sendQuestion()">
+質問する
+</button>
+
+<div id="response"></div>
+
+</div>
+
+<script>
+
+async function sendQuestion() {
+
+  const question =
+    document.getElementById('question').value
+
+  document.getElementById('response').innerHTML =
+    'AIが分析中です...'
+
+  const response = await fetch('/chat-ai', {
+
+    method:'POST',
+
+    headers:{
+      'Content-Type':'application/json'
+    },
+
+    body:JSON.stringify({
+      question
+    })
+
+  })
+
+  const data = await response.json()
+
+  document.getElementById('response').innerHTML =
+    data.answer || data.error
+
+}
+
+</script>
+
+</body>
+</html>
+  `)
+
+})
+
+app.post('/chat-ai', async (req, res) => {
+
+  try {
+
+    const question = req.body.question
+
+    const { data: reports } = await supabase
+      .from('campaign_reports')
+      .select('*')
+      .order('report_date', { ascending:false })
+      .limit(50)
+
+    const { data: keywords } = await supabase
+      .from('keyword_reports')
+      .select('*')
+      .limit(50)
+
+    const prompt = `
+あなたはGoogle広告分析AIです。
+
+以下は広告データです。
+
+campaign_reports:
+${JSON.stringify(reports, null, 2)}
+
+keyword_reports:
+${JSON.stringify(keywords, null, 2)}
+
+ユーザー質問:
+${question}
+
+広告運用の専門家として回答してください。
+`
+
+    const completion =
+      await openai.chat.completions.create({
+
+      model:'gpt-4.1-mini',
+
+      messages:[
+        {
+          role:'user',
+          content:prompt
+        }
+      ]
+
+    })
+
+    res.json({
+
+      answer:
+        completion.choices[0].message.content
+
+    })
+
+  } catch(error) {
+
+    res.status(500).json({
+      error:error.message
+    })
+
+  }
+
+})
+
