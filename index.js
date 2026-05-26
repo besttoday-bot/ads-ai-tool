@@ -306,3 +306,73 @@ ${JSON.stringify(data, null, 2)}
   }
 })
 
+
+app.get('/save-trend-analysis', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('campaign_reports')
+      .select('*')
+      .order('report_date', { ascending: true })
+
+    if (error) {
+      throw error
+    }
+
+    const prompt = `
+あなたはGoogle広告運用の専門家です。
+
+以下はGoogle広告の日別データです。
+推移を分析し、改善提案を作成してください。
+
+分析内容:
+1. CTR悪化傾向
+2. CTR改善傾向
+3. クリック減少傾向
+4. キャンペーン別比較
+5. 異常値
+6. 改善提案
+7. 今すぐやるべき施策
+8. 経営者向けまとめ
+
+データ:
+${JSON.stringify(data, null, 2)}
+`
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4.1-mini',
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
+    })
+
+    const reportContent = completion.choices[0].message.content
+
+    const { data: savedReport, error: saveError } = await supabase
+      .from('ai_reports')
+      .insert([
+        {
+          report_type: 'trend_analysis',
+          report_content: reportContent
+        }
+      ])
+      .select()
+
+    if (saveError) {
+      throw saveError
+    }
+
+    res.json({
+      message: 'AI trend analysis saved',
+      report: savedReport
+    })
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message
+    })
+  }
+})
+
