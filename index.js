@@ -1391,3 +1391,85 @@ app.get('/sync-search-terms', async (req, res) => {
   }
 })
 
+
+app.get('/analyze-search-terms', async (req, res) => {
+  try {
+
+    const { data, error } = await supabase
+      .from('search_term_reports')
+      .select('*')
+      .order('ctr', { ascending: true })
+      .limit(200)
+
+    if (error) {
+      throw error
+    }
+
+    const prompt = `
+あなたはGoogle広告の検索語句分析専門家です。
+
+以下はGoogle広告の実検索語句データです。
+
+分析してください。
+
+分析内容:
+1. 除外キーワード候補
+2. 無駄クリック候補
+3. 伸ばすべき検索語句
+4. 問い合わせにつながりそうな検索語句
+5. CTRが低い検索語句
+6. 改善すべき広告グループ傾向
+7. 今後追加すべきキーワード
+8. 経営者向けまとめ
+
+重要:
+- FileMaker開発・保守案件獲得が目的
+- 「無料」「勉強」「求人」「使い方」系は低品質候補
+- BtoB向け視点で分析
+- 検索意図を重視
+
+データ:
+${JSON.stringify(data, null, 2)}
+`
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4.1-mini',
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
+    })
+
+    const reportContent = completion.choices[0].message.content
+
+    const { data: savedReport, error: saveError } = await supabase
+      .from('ai_reports')
+      .insert([
+        {
+          report_type: 'search_term_analysis',
+          report_content: reportContent
+        }
+      ])
+      .select()
+
+    if (saveError) {
+      throw saveError
+    }
+
+    res.json({
+      message: 'Search term analysis completed',
+      analysis: reportContent,
+      saved: savedReport
+    })
+
+  } catch(error) {
+
+    res.status(500).json({
+      error: error.message
+    })
+
+  }
+})
+
