@@ -376,3 +376,72 @@ ${JSON.stringify(data, null, 2)}
   }
 })
 
+
+app.get('/dashboard', async (req, res) => {
+  try {
+    const { data: reports } = await supabase
+      .from('campaign_reports')
+      .select('*')
+      .order('report_date', { ascending: false })
+      .limit(50)
+
+    const { data: aiReports } = await supabase
+      .from('ai_reports')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(5)
+
+    res.send(`
+      <html>
+        <head>
+          <meta charset="UTF-8" />
+          <title>AI広告分析ダッシュボード</title>
+          <style>
+            body { font-family: sans-serif; padding: 24px; background: #f7f7f7; }
+            h1 { margin-bottom: 8px; }
+            .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 24px; }
+            table { width: 100%; border-collapse: collapse; background: white; }
+            th, td { border-bottom: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background: #eee; }
+            pre { white-space: pre-wrap; line-height: 1.6; }
+          </style>
+        </head>
+        <body>
+          <h1>AI広告分析ダッシュボード</h1>
+          <p>Google広告データとAI分析レポート</p>
+
+          <div class="card">
+            <h2>最新AI分析</h2>
+            <pre>${aiReports?.[0]?.report_content || 'AIレポートはまだありません'}</pre>
+          </div>
+
+          <div class="card">
+            <h2>広告データ</h2>
+            <table>
+              <tr>
+                <th>日付</th>
+                <th>キャンペーン</th>
+                <th>表示回数</th>
+                <th>クリック</th>
+                <th>CTR</th>
+              </tr>
+              ${(reports || []).map(row => `
+                <tr>
+                  <td>${row.report_date}</td>
+                  <td>${row.campaign_name}</td>
+                  <td>${row.impressions}</td>
+                  <td>${row.clicks}</td>
+                  <td>${Number(row.ctr).toFixed(4)}</td>
+                </tr>
+              `).join('')}
+            </table>
+          </div>
+        </body>
+      </html>
+    `)
+
+  } catch (error) {
+    res.status(500).send(error.message)
+  }
+})
+
