@@ -1223,3 +1223,82 @@ borderWidth:1
   }
 })
 
+
+app.get('/analyze-keywords', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('keyword_reports')
+      .select('*')
+      .order('ctr', { ascending: true })
+      .limit(100)
+
+    if (error) {
+      throw error
+    }
+
+    const prompt = `
+あなたはGoogle広告のキーワード運用専門家です。
+
+以下はGoogle広告のキーワード別データです。
+
+分析してください。
+
+分析内容:
+1. 停止候補キーワード
+2. 改善すべきキーワード
+3. 伸ばすべきキーワード
+4. 表示回数は多いがクリック率が低いキーワード
+5. クリックはあるが成果が弱そうなキーワード
+6. 広告文改善の方向性
+7. 除外キーワード候補
+8. 経営者向けまとめ
+
+注意:
+- CTRだけで判断しない
+- 表示回数とクリック数も見る
+- FileMaker開発・保守の問い合わせ獲得を目的に分析する
+- 無料、求人、勉強、使い方だけの検索意図は質が低い可能性がある
+
+データ:
+${JSON.stringify(data, null, 2)}
+`
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4.1-mini',
+      messages: [
+        {
+          role: 'user',
+          content: prompt
+        }
+      ]
+    })
+
+    const reportContent = completion.choices[0].message.content
+
+    const { data: savedReport, error: saveError } = await supabase
+      .from('ai_reports')
+      .insert([
+        {
+          report_type: 'keyword_analysis',
+          report_content: reportContent
+        }
+      ])
+      .select()
+
+    if (saveError) {
+      throw saveError
+    }
+
+    res.json({
+      message: 'Keyword analysis completed and saved',
+      analysis: reportContent,
+      saved: savedReport
+    })
+
+  } catch (error) {
+    res.status(500).json({
+      error: error.message
+    })
+  }
+})
+
