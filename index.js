@@ -1961,3 +1961,97 @@ ${question}
 
 })
 
+
+app.get('/ai-chat-history', async (req, res) => {
+
+  try {
+
+    const { data, error } = await supabase
+      .from('ai_chat_history')
+      .select('*')
+      .order('created_at', { ascending:false })
+      .limit(50)
+
+    if (error) throw error
+
+    res.send(`
+
+<html>
+<head>
+
+<meta charset="UTF-8">
+
+<title>AIチャット履歴</title>
+
+<style>
+
+body{
+  font-family:sans-serif;
+  background:#f5f5f5;
+  padding:24px;
+}
+
+.card{
+  background:white;
+  padding:24px;
+  border-radius:12px;
+  margin-bottom:24px;
+}
+
+.question{
+  font-weight:bold;
+  margin-bottom:12px;
+}
+
+.answer{
+  white-space:pre-wrap;
+  line-height:1.7;
+}
+
+.time{
+  color:#666;
+  font-size:12px;
+  margin-bottom:16px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>AIチャット履歴</h1>
+
+${data.map(row => `
+
+<div class="card">
+
+<div class="time">
+${row.created_at}
+</div>
+
+<div class="question">
+Q. ${row.question}
+</div>
+
+<div class="answer">
+${row.answer}
+</div>
+
+</div>
+
+`).join('')}
+
+</body>
+</html>
+
+    `)
+
+  } catch(error) {
+
+    res.status(500).send(error.message)
+
+  }
+
+})
+
