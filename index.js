@@ -2159,7 +2159,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 h1{font-size:28px;margin-bottom:24px;}
 .chat-row{display:flex;margin-bottom:22px;}
 .chat-row.user{justify-content:flex-end;}
-.bubble{padding:16px 18px;border-radius:18px;line-height:1.7;white-space:pre-wrap;max-width:78%;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.bubble{padding:14px 18px;border-radius:18px;line-height:1.7;white-space:pre-wrap;max-width:78%;box-shadow:0 2px 8px rgba(0,0,0,.06);display:inline-block;}
 .user .bubble{background:#2563eb;color:white;border-bottom-right-radius:4px;}
 .ai .bubble{background:white;color:#111;border-bottom-left-radius:4px;}
 .name{font-size:12px;font-weight:bold;margin-bottom:6px;opacity:.75;}
