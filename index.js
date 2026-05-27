@@ -2223,3 +2223,108 @@ window.scrollTo(0, document.body.scrollHeight)
 
 
 /* chat compact css patch */
+
+app.get('/main-dashboard', async (req, res) => {
+  try {
+    const { data: campaigns } = await supabase
+      .from('campaign_reports')
+      .select('*')
+      .order('report_date', { ascending: false })
+      .limit(50)
+
+    const { data: searchTerms } = await supabase
+      .from('search_term_reports')
+      .select('*')
+      .order('report_date', { ascending: false })
+      .limit(50)
+
+    const { data: aiReports } = await supabase
+      .from('ai_reports')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(3)
+
+    const totalClicks = (campaigns || []).reduce((sum, r) => sum + Number(r.clicks || 0), 0)
+    const totalImpressions = (campaigns || []).reduce((sum, r) => sum + Number(r.impressions || 0), 0)
+    const avgCtr = totalImpressions ? ((totalClicks / totalImpressions) * 100).toFixed(2) : 0
+
+    res.send(`
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AI広告統合ダッシュボード</title>
+<style>
+body{font-family:sans-serif;background:#f5f5f5;padding:24px;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.card{background:white;padding:20px;border-radius:12px;margin-bottom:20px;}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.kpi{background:#111;color:white;padding:20px;border-radius:12px;}
+table{width:100%;border-collapse:collapse;}
+th,td{border-bottom:1px solid #ddd;padding:8px;text-align:left;}
+th{background:#eee;}
+pre{white-space:pre-wrap;line-height:1.6;}
+a{display:inline-block;margin-right:12px;}
+</style>
+</head>
+<body>
+
+<h1>AI広告統合ダッシュボード</h1>
+
+<p>
+<a href="/ai-chat-v3">AIチャット</a>
+<a href="/dashboard-v4">キャンペーン分析</a>
+<a href="/keywords-dashboard">キーワード分析</a>
+<a href="/search-terms-dashboard-v2">検索語句分析</a>
+</p>
+
+<div class="kpis">
+  <div class="kpi"><h3>総クリック</h3><h2>${totalClicks}</h2></div>
+  <div class="kpi"><h3>総表示回数</h3><h2>${totalImpressions}</h2></div>
+  <div class="kpi"><h3>平均CTR</h3><h2>${avgCtr}%</h2></div>
+</div>
+
+<div class="card">
+  <h2>最新AIレポート</h2>
+  <pre>${aiReports?.[0]?.report_content || 'AIレポートはまだありません'}</pre>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>キャンペーン最新データ</h2>
+    <table>
+      <tr><th>日付</th><th>キャンペーン</th><th>クリック</th><th>CTR</th></tr>
+      ${(campaigns || []).map(r => `
+        <tr>
+          <td>${r.report_date}</td>
+          <td>${r.campaign_name}</td>
+          <td>${r.clicks}</td>
+          <td>${(Number(r.ctr) * 100).toFixed(2)}%</td>
+        </tr>
+      `).join('')}
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>検索語句最新データ</h2>
+    <table>
+      <tr><th>日付</th><th>検索語句</th><th>クリック</th><th>CTR</th></tr>
+      ${(searchTerms || []).map(r => `
+        <tr>
+          <td>${r.report_date}</td>
+          <td>${r.search_term}</td>
+          <td>${r.clicks}</td>
+          <td>${(Number(r.ctr) * 100).toFixed(2)}%</td>
+        </tr>
+      `).join('')}
+    </table>
+  </div>
+</div>
+
+</body>
+</html>
+    `)
+  } catch (error) {
+    res.status(500).send(error.message)
+  }
+})
+
