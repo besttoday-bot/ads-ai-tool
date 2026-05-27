@@ -2160,7 +2160,7 @@ h1{font-size:28px;margin-bottom:24px;}
 .chat-row{display:flex;margin-bottom:22px;}
 .chat-row.user{justify-content:flex-end;}
 .bubble{padding:10px 14px;border-radius:18px;line-height:1.7;white-space:pre-wrap;max-width:45%;box-shadow:0 2px 8px rgba(0,0,0,.06);display:inline-block;}
-.user .bubble{background:#2563eb;color:white;border-bottom-right-radius:4px;}
+.user .bubble{background:#2563eb;color:white;border-bottom-right-radius:4px;width:auto;max-width:fit-content;display:inline-flex;flex-direction:column;}
 .ai .bubble{background:white;color:#111;border-bottom-left-radius:4px;}
 .name{font-size:12px;font-weight:bold;margin-bottom:6px;opacity:.75;}
 .form-area{position:fixed;left:0;right:0;bottom:0;background:#f7f7f8;border-top:1px solid #ddd;padding:16px;}
