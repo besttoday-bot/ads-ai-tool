@@ -1944,11 +1944,19 @@ ${question}
 
     })
 
+    const aiAnswer = completion.choices[0].message.content
+
+    await supabase
+      .from('ai_chat_history')
+      .insert([
+        {
+          question,
+          answer: aiAnswer
+        }
+      ])
+
     res.json({
-
-      answer:
-        completion.choices[0].message.content
-
+      answer: aiAnswer
     })
 
   } catch(error) {
