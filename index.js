@@ -2063,3 +2063,76 @@ ${row.answer}
 
 })
 
+
+app.get('/ai-chat-v2', async (req, res) => {
+  try {
+    const { data: histories } = await supabase
+      .from('ai_chat_history')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(20)
+
+    res.send(`
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AI広告チャット</title>
+<style>
+body{font-family:sans-serif;background:#f5f5f5;padding:24px;}
+.container{max-width:900px;margin:auto;}
+.card{background:white;padding:20px;border-radius:12px;margin-bottom:16px;}
+textarea{width:100%;height:100px;padding:12px;font-size:16px;}
+button{padding:12px 20px;margin-top:10px;font-size:16px;}
+.q{font-weight:bold;margin-bottom:8px;}
+.a{white-space:pre-wrap;line-height:1.7;}
+.time{color:#777;font-size:12px;margin-bottom:8px;}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>AI広告チャット</h1>
+
+<div class="card">
+<textarea id="question" placeholder="例：昨日の広告結果を教えて"></textarea>
+<br>
+<button onclick="sendQuestion()">送信</button>
+</div>
+
+<div id="chatHistory">
+${(histories || []).map(row => `
+  <div class="card">
+    <div class="time">${row.created_at}</div>
+    <div class="q">Q. ${row.question}</div>
+    <div class="a">${row.answer}</div>
+  </div>
+`).join('')}
+</div>
+</div>
+
+<script>
+async function sendQuestion(){
+  const question = document.getElementById('question').value
+  if(!question) return
+
+  const box = document.getElementById('chatHistory')
+  box.insertAdjacentHTML('afterbegin', '<div class="card">AIが分析中です...</div>')
+
+  const response = await fetch('/chat-ai',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({question})
+  })
+
+  const data = await response.json()
+
+  location.reload()
+}
+</script>
+</body>
+</html>
+    `)
+  } catch(error) {
+    res.status(500).send(error.message)
+  }
+})
+
