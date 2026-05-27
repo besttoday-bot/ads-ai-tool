@@ -2082,7 +2082,7 @@ body{font-family:sans-serif;background:#f5f5f5;padding:24px;max-width:1000px;mar
 .container{max-width:900px;margin:auto;}
 .card{padding:0;margin-bottom:20px;background:none;}
 .user-card{background:#2563eb;color:white;padding:16px;border-radius:16px 16px 4px 16px;max-width:70%;margin-left:auto;margin-bottom:8px;}
-.ai-card{background:white;padding:16px;border-radius:16px 16px 16px 4px;max-width:85%;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+.ai-card{background:white;padding:16px;border-radius:16px 16px 16px 4px;max-width:70%;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
 
 textarea{width:100%;height:100px;padding:12px;font-size:16px;}
 button{padding:12px 20px;margin-top:10px;font-size:16px;}
@@ -2159,7 +2159,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;backgrou
 h1{font-size:28px;margin-bottom:24px;}
 .chat-row{display:flex;margin-bottom:22px;}
 .chat-row.user{justify-content:flex-end;}
-.bubble{padding:14px 18px;border-radius:18px;line-height:1.7;white-space:pre-wrap;max-width:78%;box-shadow:0 2px 8px rgba(0,0,0,.06);display:inline-block;}
+.bubble{padding:10px 14px;border-radius:18px;line-height:1.7;white-space:pre-wrap;max-width:45%;box-shadow:0 2px 8px rgba(0,0,0,.06);display:inline-block;}
 .user .bubble{background:#2563eb;color:white;border-bottom-right-radius:4px;}
 .ai .bubble{background:white;color:#111;border-bottom-left-radius:4px;}
 .name{font-size:12px;font-weight:bold;margin-bottom:6px;opacity:.75;}
