@@ -2139,3 +2139,85 @@ async function sendQuestion(){
   }
 })
 
+
+app.get('/ai-chat-v3', async (req, res) => {
+  try {
+    const { data: histories } = await supabase
+      .from('ai_chat_history')
+      .select('*')
+      .order('created_at', { ascending: true })
+      .limit(30)
+
+    res.send(`
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AI広告チャット v3</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f7f7f8;margin:0;}
+.wrapper{max-width:900px;margin:0 auto;padding:24px 20px 160px;}
+h1{font-size:28px;margin-bottom:24px;}
+.chat-row{display:flex;margin-bottom:22px;}
+.chat-row.user{justify-content:flex-end;}
+.bubble{padding:16px 18px;border-radius:18px;line-height:1.7;white-space:pre-wrap;max-width:78%;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.user .bubble{background:#2563eb;color:white;border-bottom-right-radius:4px;}
+.ai .bubble{background:white;color:#111;border-bottom-left-radius:4px;}
+.name{font-size:12px;font-weight:bold;margin-bottom:6px;opacity:.75;}
+.form-area{position:fixed;left:0;right:0;bottom:0;background:#f7f7f8;border-top:1px solid #ddd;padding:16px;}
+.form-box{max-width:900px;margin:0 auto;display:flex;gap:10px;}
+textarea{flex:1;height:70px;padding:14px;border-radius:14px;border:1px solid #ccc;font-size:15px;}
+button{width:90px;border:0;border-radius:14px;background:#111;color:white;font-size:15px;}
+</style>
+</head>
+<body>
+<div class="wrapper">
+<h1>AI広告チャット</h1>
+
+${(histories || []).map(row => `
+  <div class="chat-row user">
+    <div class="bubble">
+      <div class="name">あなた</div>
+      ${row.question}
+    </div>
+  </div>
+
+  <div class="chat-row ai">
+    <div class="bubble">
+      <div class="name">AI広告アシスタント</div>
+      ${row.answer}
+    </div>
+  </div>
+`).join('')}
+
+</div>
+
+<div class="form-area">
+  <div class="form-box">
+    <textarea id="question" placeholder="広告データについて質問してください"></textarea>
+    <button onclick="sendQuestion()">送信</button>
+  </div>
+</div>
+
+<script>
+async function sendQuestion(){
+  const question = document.getElementById('question').value
+  if(!question.trim()) return
+
+  await fetch('/chat-ai',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({question})
+  })
+
+  location.reload()
+}
+window.scrollTo(0, document.body.scrollHeight)
+</script>
+</body>
+</html>
+    `)
+  } catch(error) {
+    res.status(500).send(error.message)
+  }
+})
+
