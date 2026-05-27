@@ -2078,9 +2078,12 @@ app.get('/ai-chat-v2', async (req, res) => {
 <meta charset="UTF-8">
 <title>AI広告チャット</title>
 <style>
-body{font-family:sans-serif;background:#f5f5f5;padding:24px;}
+body{font-family:sans-serif;background:#f5f5f5;padding:24px;max-width:1000px;margin:auto;}
 .container{max-width:900px;margin:auto;}
-.card{background:white;padding:20px;border-radius:12px;margin-bottom:16px;}
+.card{padding:0;margin-bottom:20px;background:none;}
+.user-card{background:#2563eb;color:white;padding:16px;border-radius:16px 16px 4px 16px;max-width:70%;margin-left:auto;margin-bottom:8px;}
+.ai-card{background:white;padding:16px;border-radius:16px 16px 16px 4px;max-width:85%;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+
 textarea{width:100%;height:100px;padding:12px;font-size:16px;}
 button{padding:12px 20px;margin-top:10px;font-size:16px;}
 .q{font-weight:bold;margin-bottom:8px;}
