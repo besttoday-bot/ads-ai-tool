@@ -9,6 +9,75 @@ const app = express()
 
 app.use(express.json())
 
+app.use(express.urlencoded({ extended: true }))
+
+function getCookie(req, name) {
+  const cookies = req.headers.cookie || ''
+  const match = cookies.match(new RegExp('(^| )' + name + '=([^;]+)'))
+  return match ? match[2] : null
+}
+
+function isProtectedPath(path) {
+  return (
+    path.startsWith('/main-dashboard') ||
+    path.startsWith('/dashboard') ||
+    path.startsWith('/keywords-dashboard') ||
+    path.startsWith('/search-terms-dashboard') ||
+    path.startsWith('/ai-chat') ||
+    path.startsWith('/chat-ai')
+  )
+}
+
+app.use((req, res, next) => {
+  if (!isProtectedPath(req.path)) return next()
+
+  const token = getCookie(req, 'ads_ai_login')
+  if (token === process.env.APP_PASSWORD) return next()
+
+  return res.redirect('/login')
+})
+
+app.get('/login', (req, res) => {
+  res.send(`
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ログイン</title>
+<style>
+body{font-family:sans-serif;background:#f5f5f5;display:flex;align-items:center;justify-content:center;height:100vh;}
+.card{background:white;padding:32px;border-radius:16px;width:360px;box-shadow:0 8px 24px rgba(0,0,0,.08);}
+input{width:100%;padding:12px;margin-top:12px;font-size:16px;}
+button{width:100%;padding:12px;margin-top:16px;background:#111;color:white;border:0;border-radius:8px;font-size:16px;}
+</style>
+</head>
+<body>
+<div class="card">
+<h1>ログイン</h1>
+<form method="POST" action="/login">
+<input type="password" name="password" placeholder="パスワード">
+<button type="submit">ログイン</button>
+</form>
+</div>
+</body>
+</html>
+  `)
+})
+
+app.post('/login', (req, res) => {
+  if (req.body.password === process.env.APP_PASSWORD) {
+    res.setHeader('Set-Cookie', `ads_ai_login=${process.env.APP_PASSWORD}; Path=/; HttpOnly; SameSite=Lax; Max-Age=86400`)
+    return res.redirect('/main-dashboard')
+  }
+
+  res.status(401).send('パスワードが違います')
+})
+
+app.get('/logout', (req, res) => {
+  res.setHeader('Set-Cookie', 'ads_ai_login=; Path=/; Max-Age=0')
+  res.redirect('/login')
+})
+
+
 const PORT = process.env.PORT || 3000
 
 const openai = new OpenAI({
