@@ -47,7 +47,7 @@ app.get('/login', (req, res) => {
 body{font-family:sans-serif;background:#f5f5f5;display:flex;align-items:center;justify-content:center;height:100vh;}
 .card{background:white;padding:32px;border-radius:16px;width:360px;box-shadow:0 8px 24px rgba(0,0,0,.08);}
 input{width:100%;padding:12px;margin-top:12px;font-size:16px;}
-button{width:100%;padding:12px;margin-top:16px;background:#111;color:white;border:0;border-radius:8px;font-size:16px;}
+button{width:100%;padding:12px;margin-top:16px;background:#111;color:white;border:0;border-radius:10px;font-size:16px;}
 </style>
 </head>
 <body>
@@ -1134,7 +1134,7 @@ th,td{
 }
 
 th{
-  background:#eee;
+  background:#f3f3f3;
 }
 
 </style>
@@ -2330,7 +2330,7 @@ body{font-family:sans-serif;background:#f5f5f5;padding:24px;}
 .kpi{background:#111;color:white;padding:20px;border-radius:12px;}
 table{width:100%;border-collapse:collapse;}
 th,td{border-bottom:1px solid #ddd;padding:8px;text-align:left;}
-th{background:#eee;}
+th{background:#f3f3f3;}
 pre{white-space:pre-wrap;line-height:1.6;}
 a{display:inline-block;margin-right:12px;}
 </style>
@@ -2416,10 +2416,10 @@ app.get('/customers', async (req, res) => {
 body{font-family:sans-serif;background:#f5f5f5;padding:24px;}
 .card{background:white;padding:24px;border-radius:12px;margin-bottom:24px;}
 input,textarea{width:100%;padding:10px;margin:6px 0 12px;font-size:14px;}
-button{padding:12px 20px;background:#111;color:white;border:0;border-radius:8px;}
+button{padding:12px 20px;background:#111;color:white;border:0;border-radius:10px;}
 table{width:100%;border-collapse:collapse;background:white;}
 th,td{border-bottom:1px solid #ddd;padding:8px;text-align:left;}
-th{background:#eee;}
+th{background:#f3f3f3;}
 </style>
 </head>
 <body>
@@ -2742,7 +2742,7 @@ body{font-family:sans-serif;background:#f5f5f5;padding:40px;}
 .container{max-width:900px;margin:auto;}
 .card{background:white;padding:32px;border-radius:18px;margin-bottom:24px;}
 label{display:block;margin-top:16px;font-weight:bold;}
-input{width:100%;padding:12px;margin-top:6px;border:1px solid #ddd;border-radius:8px;}
+input{width:100%;padding:12px;margin-top:6px;border:1px solid #ddd;border-radius:10px;}
 button{margin-top:24px;padding:14px 28px;background:#111;color:white;border:0;border-radius:10px;}
 small{color:#666;}
 </style>
@@ -2881,12 +2881,12 @@ body{font-family:sans-serif;background:#f5f5f5;padding:40px;}
 .container{max-width:900px;margin:auto;}
 .card{background:white;padding:32px;border-radius:18px;margin-bottom:24px;}
 label{display:block;margin-top:16px;font-weight:bold;}
-input{width:100%;padding:12px;margin-top:6px;border:1px solid #ddd;border-radius:8px;}
+input{width:100%;padding:12px;margin-top:6px;border:1px solid #ddd;border-radius:10px;}
 button{margin-top:24px;padding:14px 28px;background:#111;color:white;border:0;border-radius:10px;}
 .input-row{display:flex;gap:8px;align-items:center;}
 .input-row input{flex:1;}
-.eye{width:44px;padding:12px;margin-top:6px;background:#eee;color:#111;border-radius:8px;}
-.error{background:#ffe5e5;color:#b00020;padding:12px;border-radius:8px;margin-bottom:16px;}
+.eye{width:44px;padding:12px;margin-top:6px;background:#f3f3f3;color:#111;border-radius:10px;}
+.error{background:#ffe5e5;color:#b00020;padding:12px;border-radius:10px;margin-bottom:16px;}
 </style>
 </head>
 <body>
@@ -3022,13 +3022,13 @@ app.get('/profile-settings-v3', async (req, res) => {
     const user = users?.[0] || {}
 
     const eyeOpen = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="black" viewBox="0 0 24 24">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="black" viewBox="0 0 24 24">
         <path d="M12 5C5 5 1 12 1 12s4 7 11 7 11-7 11-7-4-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/>
       </svg>
     `
 
     const eyeClosed = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="black" viewBox="0 0 24 24">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="black" viewBox="0 0 24 24">
         <path d="M2 2l20 20-1.5 1.5-4.2-4.2A12.7 12.7 0 0 1 12 19C5 19 1 12 1 12a21.5 21.5 0 0 1 5-5.7L.5 2.5 2 1z"/>
         <path d="M12 5c7 0 11 7 11 7a20.7 20.7 0 0 1-3.8 4.6l-2.1-2.1A4 4 0 0 0 9.5 6.9L7.9 5.3A13 13 0 0 1 12 5z"/>
       </svg>
@@ -3044,12 +3044,12 @@ body{font-family:sans-serif;background:#f5f5f5;padding:40px;}
 .container{max-width:900px;margin:auto;}
 .card{background:white;padding:32px;border-radius:18px;margin-bottom:24px;}
 label{display:block;margin-top:16px;font-weight:bold;}
-input{width:100%;padding:12px;margin-top:6px;border:1px solid #ddd;border-radius:8px;font-size:15px;}
+input{width:100%;padding:12px;margin-top:6px;border:1px solid #ddd;border-radius:10px;font-size:15px;}
 button{margin-top:24px;padding:14px 28px;background:#111;color:white;border:0;border-radius:10px;font-size:15px;}
 .input-row{display:flex;gap:8px;align-items:center;}
 .input-row input{flex:1;}
-.eye{width:52px;height:44px;margin-top:6px;padding:8px;background:#eee;color:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
-.error{background:#ffe5e5;color:#b00020;padding:12px;border-radius:8px;margin-bottom:16px;}
+.eye{width:42px;height:42px;margin-top:6px;padding:8px;background:#f3f3f3;color:#111;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.error{background:#ffe5e5;color:#b00020;padding:12px;border-radius:10px;margin-bottom:16px;}
 small{color:#666;}
 </style>
 </head>
