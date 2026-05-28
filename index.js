@@ -48,6 +48,28 @@ body{font-family:sans-serif;background:#f5f5f5;display:flex;align-items:center;j
 .card{background:white;padding:32px;border-radius:16px;width:360px;box-shadow:0 8px 24px rgba(0,0,0,.08);}
 input{width:100%;padding:12px;margin-top:12px;font-size:16px;}
 button{width:100%;padding:12px;margin-top:16px;background:#111;color:white;border:0;border-radius:10px;font-size:16px;}
+
+.search-btn,
+.reset-btn{
+  width:96px !important;
+  height:44px !important;
+  padding:0 !important;
+  border-radius:8px !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  box-sizing:border-box !important;
+  font-size:14px !important;
+  font-weight:bold !important;
+}
+.search-btn{
+  background:#111 !important;
+  color:white !important;
+}
+.reset-btn{
+  background:#9ca3af !important;
+  color:white !important;
+}
 </style>
 </head>
 <body>
@@ -760,7 +782,7 @@ app.get('/dashboard-v4', async (req, res) => {
         </select>
       </div>
 
-      <button type="submit">検索</button>
+      <button class="search-btn" type="submit">検索</button>
       <a href="/dashboard-v4">リセット</a>
     </form>
   </div>
@@ -892,7 +914,7 @@ app.get('/dashboard-v4', async (req, res) => {
         </select>
       </div>
 
-      <button type="submit">検索</button>
+      <button class="search-btn" type="submit">検索</button>
       <a href="/dashboard-v4">リセット</a>
     </form>
   </div>
@@ -1182,7 +1204,7 @@ ${name}
 
 </div>
 
-<button type="submit">検索</button>
+<button class="search-btn" type="submit">検索</button>
 
 </form>
 
@@ -1693,7 +1715,7 @@ app.get('/search-terms-dashboard', async (req, res) => {
         <input type="text" name="term" value="${term || ''}" placeholder="例: 無料 / 求人 / filemaker">
       </div>
 
-      <button type="submit">検索</button>
+      <button class="search-btn" type="submit">検索</button>
       <a href="/search-terms-dashboard">リセット</a>
     </form>
   </div>
@@ -1796,7 +1818,7 @@ app.get('/search-terms-dashboard-v2', async (req, res) => {
         <label>検索語句</label><br>
         <input type="text" name="term" value="${term || ''}" placeholder="例: 無料 / 求人 / filemaker">
       </div>
-      <button type="submit">検索</button>
+      <button class="search-btn" type="submit">検索</button>
       <a href="/search-terms-dashboard-v2">リセット</a>
     </form>
   </div>
@@ -3804,7 +3826,7 @@ button,.reset-btn{padding:11px 20px;border:none;border-radius:8px;background:#11
 <input type="date" name="end" value="${end || ''}">
 </label>
 
-<button type="submit">検索</button>
+<button class="search-btn" type="submit">検索</button>
 <a class="reset-btn" href="/main-dashboard-v3">リセット</a>
 </form>
 </div>
@@ -4048,7 +4070,7 @@ button,.reset-btn{padding:11px 20px;border:none;border-radius:8px;background:#11
 <input type="date" name="end" value="${end || ''}">
 </label>
 
-<button type="submit">検索</button>
+<button class="search-btn" type="submit">検索</button>
 <a class="reset-btn" href="/main-dashboard-v3">リセット</a>
 </form>
 </div>
@@ -4292,7 +4314,7 @@ button,.reset-btn{padding:11px 20px;border:none;border-radius:8px;background:#11
 <input type="date" name="end" value="${end || ''}">
 </label>
 
-<button type="submit">検索</button>
+<button class="search-btn" type="submit">検索</button>
 <a class="reset-btn" href="/main-dashboard-v3">リセット</a>
 </form>
 </div>
