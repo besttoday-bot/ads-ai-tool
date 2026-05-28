@@ -3205,3 +3205,218 @@ app.post('/profile-settings-v3', async (req, res) => {
   }
 })
 
+
+app.get('/profile-settings-v4', async (req, res) => {
+  try {
+    const errorMessage = req.query.error || ''
+    const { data: users } = await supabase.from('users').select('*').limit(1)
+    const user = users?.[0] || {}
+
+    res.send(`
+<html>
+<head>
+<meta charset="UTF-8">
+<title>マイページ設定</title>
+<style>
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f9fafb;margin:0;padding:32px 16px;color:#111827;}
+.container{max-width:768px;margin:0 auto;}
+.back{display:inline-flex;align-items:center;gap:6px;color:#4b5563;text-decoration:none;font-size:14px;margin-bottom:24px;}
+h1{font-size:30px;margin:0 0 32px;font-weight:700;}
+.card{background:white;border-radius:12px;padding:24px;margin-bottom:24px;box-shadow:0 1px 3px rgba(0,0,0,.08);}
+h2{font-size:20px;margin:0 0 24px;}
+.field{margin-bottom:20px;}
+label{display:block;font-size:14px;font-weight:600;margin-bottom:8px;color:#111827;}
+input{width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:15px;outline:none;}
+input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.18);}
+.input-wrap{position:relative;}
+.input-wrap input{padding-right:44px;}
+.eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);border:0;background:transparent;color:#9ca3af;cursor:pointer;padding:4px;margin:0;}
+.eye:hover{color:#4b5563;}
+.eye svg{width:20px;height:20px;display:block;}
+.help{font-size:12px;color:#6b7280;margin-top:8px;}
+.error{background:#fee2e2;color:#991b1b;padding:12px;border-radius:8px;margin-bottom:20px;}
+.submit{background:#111827;color:white;border:0;border-radius:10px;padding:14px 28px;font-size:15px;font-weight:600;cursor:pointer;}
+.submit:hover{background:#000;}
+</style>
+</head>
+<body>
+<div class="container">
+
+<a class="back" href="/main-dashboard">← ダッシュボードへ戻る</a>
+
+<h1>マイページ設定</h1>
+
+${errorMessage ? `<div class="error">${errorMessage}</div>` : ''}
+
+<form method="POST" action="/profile-settings-v4">
+
+<div class="card">
+<h2>基本情報</h2>
+
+<div class="field">
+<label>会社名</label>
+<input name="company_name" value="${user.company_name || ''}">
+</div>
+
+<div class="field">
+<label>担当者名</label>
+<input name="contact_name" value="${user.contact_name || ''}">
+</div>
+
+<div class="field">
+<label>電話番号</label>
+<input name="phone" value="${user.phone || ''}">
+</div>
+
+<div class="field">
+<label>メールアドレス</label>
+<input name="email" type="email" value="${user.email || ''}">
+</div>
+</div>
+
+<div class="card">
+<h2>ログイン設定</h2>
+
+<div class="field">
+<label>新しいパスワード</label>
+<div class="input-wrap">
+<input id="password" name="password" type="password" placeholder="変更する場合のみ入力">
+<button class="eye" type="button" onclick="togglePassword('password', this)" data-show="false"></button>
+</div>
+</div>
+
+<div class="field">
+<label>新しいパスワード確認</label>
+<div class="input-wrap">
+<input id="password_confirm" name="password_confirm" type="password" placeholder="もう一度入力">
+<button class="eye" type="button" onclick="togglePassword('password_confirm', this)" data-show="false"></button>
+</div>
+<p class="help">パスワードを変更する場合は、2つの入力欄に同じ値を入力してください。</p>
+</div>
+</div>
+
+<div class="card">
+<h2>API設定</h2>
+
+<div class="field">
+<label>Google Ads Customer ID</label>
+<input name="google_ads_customer_id" value="${user.google_ads_customer_id || ''}">
+</div>
+
+<div class="field">
+<label>Google Ads Login Customer ID</label>
+<input name="google_ads_login_customer_id" value="${user.google_ads_login_customer_id || ''}">
+</div>
+
+<div class="field">
+<label>OpenAI API Key</label>
+<div class="input-wrap">
+<input id="openai_api_key" name="openai_api_key" type="password" value="${user.openai_api_key || ''}">
+<button class="eye" type="button" onclick="togglePassword('openai_api_key', this)" data-show="false"></button>
+</div>
+</div>
+
+<div class="field">
+<label>Google Ads Developer Token</label>
+<div class="input-wrap">
+<input id="google_ads_developer_token" name="google_ads_developer_token" type="password" value="${user.google_ads_developer_token || ''}">
+<button class="eye" type="button" onclick="togglePassword('google_ads_developer_token', this)" data-show="false"></button>
+</div>
+</div>
+
+<div class="field">
+<label>Google Ads Refresh Token</label>
+<div class="input-wrap">
+<input id="google_ads_refresh_token" name="google_ads_refresh_token" type="password" value="${user.google_ads_refresh_token || ''}">
+<button class="eye" type="button" onclick="togglePassword('google_ads_refresh_token', this)" data-show="false"></button>
+</div>
+</div>
+
+</div>
+
+<button class="submit" type="submit">保存</button>
+</form>
+</div>
+
+<script>
+const eyeIcon = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.25 12s3.75-6.75 9.75-6.75S21.75 12 21.75 12 18 18.75 12 18.75 2.25 12 2.25 12z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>'
+const eyeOffIcon = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3l18 18M10.58 10.58A2 2 0 0012 14a2 2 0 001.42-.58M9.88 5.55A9.43 9.43 0 0112 5.25c6 0 9.75 6.75 9.75 6.75a16.6 16.6 0 01-3.1 3.8M6.1 6.1C3.65 7.75 2.25 12 2.25 12s3.75 6.75 9.75 6.75c1.55 0 2.95-.45 4.15-1.08"/></svg>'
+
+document.querySelectorAll('.eye').forEach(btn => {
+  btn.innerHTML = eyeIcon
+})
+
+function togglePassword(id, btn){
+  const el = document.getElementById(id)
+  const show = btn.dataset.show === 'true'
+
+  if(show){
+    el.type = 'password'
+    btn.innerHTML = eyeIcon
+    btn.dataset.show = 'false'
+  } else {
+    el.type = 'text'
+    btn.innerHTML = eyeOffIcon
+    btn.dataset.show = 'true'
+  }
+}
+</script>
+</body>
+</html>
+    `)
+  } catch(error) {
+    res.status(500).send(error.message)
+  }
+})
+
+app.post('/profile-settings-v4', async (req, res) => {
+  try {
+    const {
+      company_name,
+      contact_name,
+      phone,
+      email,
+      password,
+      password_confirm,
+      openai_api_key,
+      google_ads_customer_id,
+      google_ads_login_customer_id,
+      google_ads_developer_token,
+      google_ads_refresh_token
+    } = req.body
+
+    if (password || password_confirm) {
+      if (password !== password_confirm) {
+        return res.redirect('/profile-settings-v4?error=' + encodeURIComponent('パスワードと確認用パスワードが一致しません'))
+      }
+    }
+
+    const updateData = {
+      company_name,
+      contact_name,
+      phone,
+      email,
+      openai_api_key,
+      google_ads_customer_id,
+      google_ads_login_customer_id,
+      google_ads_developer_token,
+      google_ads_refresh_token
+    }
+
+    if (password && password.trim() !== '') updateData.password = password
+
+    const { data: users } = await supabase.from('users').select('*').limit(1)
+    const user = users?.[0]
+
+    if (user) {
+      await supabase.from('users').update(updateData).eq('id', user.id)
+    } else {
+      await supabase.from('users').insert([updateData])
+    }
+
+    res.redirect('/profile-settings-v4')
+  } catch(error) {
+    res.status(500).send(error.message)
+  }
+})
+
