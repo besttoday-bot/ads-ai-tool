@@ -3014,3 +3014,194 @@ app.post('/profile-settings-v2', async (req, res) => {
   }
 })
 
+
+app.get('/profile-settings-v3', async (req, res) => {
+  try {
+    const errorMessage = req.query.error || ''
+    const { data: users } = await supabase.from('users').select('*').limit(1)
+    const user = users?.[0] || {}
+
+    const eyeOpen = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="black" viewBox="0 0 24 24">
+        <path d="M12 5C5 5 1 12 1 12s4 7 11 7 11-7 11-7-4-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/>
+      </svg>
+    `
+
+    const eyeClosed = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="black" viewBox="0 0 24 24">
+        <path d="M2 2l20 20-1.5 1.5-4.2-4.2A12.7 12.7 0 0 1 12 19C5 19 1 12 1 12a21.5 21.5 0 0 1 5-5.7L.5 2.5 2 1z"/>
+        <path d="M12 5c7 0 11 7 11 7a20.7 20.7 0 0 1-3.8 4.6l-2.1-2.1A4 4 0 0 0 9.5 6.9L7.9 5.3A13 13 0 0 1 12 5z"/>
+      </svg>
+    `
+
+    res.send(`
+<html>
+<head>
+<meta charset="UTF-8">
+<title>マイページ設定</title>
+<style>
+body{font-family:sans-serif;background:#f5f5f5;padding:40px;}
+.container{max-width:900px;margin:auto;}
+.card{background:white;padding:32px;border-radius:18px;margin-bottom:24px;}
+label{display:block;margin-top:16px;font-weight:bold;}
+input{width:100%;padding:12px;margin-top:6px;border:1px solid #ddd;border-radius:8px;font-size:15px;}
+button{margin-top:24px;padding:14px 28px;background:#111;color:white;border:0;border-radius:10px;font-size:15px;}
+.input-row{display:flex;gap:8px;align-items:center;}
+.input-row input{flex:1;}
+.eye{width:52px;height:44px;margin-top:6px;padding:8px;background:#eee;color:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.error{background:#ffe5e5;color:#b00020;padding:12px;border-radius:8px;margin-bottom:16px;}
+small{color:#666;}
+</style>
+</head>
+<body>
+<div class="container">
+<a href="/main-dashboard">← ダッシュボードへ戻る</a>
+<h1>マイページ設定</h1>
+
+${errorMessage ? `<div class="error">${errorMessage}</div>` : ''}
+
+<form method="POST" action="/profile-settings-v3">
+
+<div class="card">
+<h2>基本情報</h2>
+
+<label>会社名</label>
+<input name="company_name" value="${user.company_name || ''}">
+
+<label>担当者名</label>
+<input name="contact_name" value="${user.contact_name || ''}">
+
+<label>電話番号</label>
+<input name="phone" value="${user.phone || ''}">
+
+<label>メールアドレス</label>
+<input name="email" value="${user.email || ''}">
+</div>
+
+<div class="card">
+<h2>ログイン設定</h2>
+
+<label>新しいパスワード</label>
+<div class="input-row">
+<input id="password" name="password" type="password" placeholder="変更する場合のみ入力">
+<button class="eye" type="button" onclick="togglePassword('password', this)">${eyeClosed}</button>
+</div>
+
+<label>新しいパスワード確認</label>
+<div class="input-row">
+<input id="password_confirm" name="password_confirm" type="password" placeholder="もう一度入力">
+<button class="eye" type="button" onclick="togglePassword('password_confirm', this)">${eyeClosed}</button>
+</div>
+
+<small>パスワードを変更する場合は、2つの入力欄に同じ値を入力してください。</small>
+</div>
+
+<div class="card">
+<h2>API設定</h2>
+
+<label>Google Ads Customer ID</label>
+<input name="google_ads_customer_id" value="${user.google_ads_customer_id || ''}">
+
+<label>Google Ads Login Customer ID</label>
+<input name="google_ads_login_customer_id" value="${user.google_ads_login_customer_id || ''}">
+
+<label>OpenAI API Key</label>
+<div class="input-row">
+<input id="openai_api_key" name="openai_api_key" type="password" value="${user.openai_api_key || ''}">
+<button class="eye" type="button" onclick="togglePassword('openai_api_key', this)">${eyeClosed}</button>
+</div>
+
+<label>Google Ads Developer Token</label>
+<div class="input-row">
+<input id="google_ads_developer_token" name="google_ads_developer_token" type="password" value="${user.google_ads_developer_token || ''}">
+<button class="eye" type="button" onclick="togglePassword('google_ads_developer_token', this)">${eyeClosed}</button>
+</div>
+
+<label>Google Ads Refresh Token</label>
+<div class="input-row">
+<input id="google_ads_refresh_token" name="google_ads_refresh_token" type="password" value="${user.google_ads_refresh_token || ''}">
+<button class="eye" type="button" onclick="togglePassword('google_ads_refresh_token', this)">${eyeClosed}</button>
+</div>
+
+</div>
+
+<button type="submit">保存</button>
+</form>
+</div>
+
+<script>
+const eyeOpen = \`${eyeOpen}\`
+const eyeClosed = \`${eyeClosed}\`
+
+function togglePassword(id, btn){
+  const el = document.getElementById(id)
+  if(el.type === 'password'){
+    el.type = 'text'
+    btn.innerHTML = eyeOpen
+  } else {
+    el.type = 'password'
+    btn.innerHTML = eyeClosed
+  }
+}
+</script>
+</body>
+</html>
+    `)
+  } catch(error) {
+    res.status(500).send(error.message)
+  }
+})
+
+app.post('/profile-settings-v3', async (req, res) => {
+  try {
+    const {
+      company_name,
+      contact_name,
+      phone,
+      email,
+      password,
+      password_confirm,
+      openai_api_key,
+      google_ads_customer_id,
+      google_ads_login_customer_id,
+      google_ads_developer_token,
+      google_ads_refresh_token
+    } = req.body
+
+    if (password || password_confirm) {
+      if (password !== password_confirm) {
+        return res.redirect('/profile-settings-v3?error=' + encodeURIComponent('パスワードと確認用パスワードが一致しません'))
+      }
+    }
+
+    const updateData = {
+      company_name,
+      contact_name,
+      phone,
+      email,
+      openai_api_key,
+      google_ads_customer_id,
+      google_ads_login_customer_id,
+      google_ads_developer_token,
+      google_ads_refresh_token
+    }
+
+    if (password && password.trim() !== '') {
+      updateData.password = password
+    }
+
+    const { data: users } = await supabase.from('users').select('*').limit(1)
+    const user = users?.[0]
+
+    if (user) {
+      await supabase.from('users').update(updateData).eq('id', user.id)
+    } else {
+      await supabase.from('users').insert([updateData])
+    }
+
+    res.redirect('/profile-settings-v3')
+  } catch(error) {
+    res.status(500).send(error.message)
+  }
+})
+
