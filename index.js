@@ -4060,3 +4060,188 @@ checks.forEach((id, index) => {
 
 })
 
+
+app.get('/main-dashboard-v3', async (req, res) => {
+
+  try {
+
+    const { start, end } = req.query
+
+    let query = supabase
+      .from('campaign_reports')
+      .select('*')
+      .order('report_date', { ascending:true })
+
+    if (start) {
+      query = query.gte('report_date', start)
+    }
+
+    if (end) {
+      query = query.lte('report_date', end)
+    }
+
+    const { data: campaigns, error } = await query
+
+    if (error) throw error
+
+    const labels = campaigns.map(r => r.report_date)
+
+    const ctrData = campaigns.map(r => Number(r.ctr || 0) * 100)
+    const clicksData = campaigns.map(r => Number(r.clicks || 0))
+    const impressionsData = campaigns.map(r => Number(r.impressions || 0))
+    const cpcData = campaigns.map(r => Number(r.average_cpc || 0))
+    const cvData = campaigns.map(r => Number(r.conversions || 0))
+
+    const totalClicks = campaigns.reduce((sum, r) => sum + Number(r.clicks || 0), 0)
+    const totalImpressions = campaigns.reduce((sum, r) => sum + Number(r.impressions || 0), 0)
+    const avgCtr = totalImpressions ? ((totalClicks / totalImpressions) * 100).toFixed(2) : 0
+
+    res.send(`
+
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AI広告ダッシュボード v3</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{font-family:sans-serif;background:#f5f5f5;padding:32px;}
+.container{max-width:1200px;margin:auto;}
+.card{background:white;border-radius:20px;padding:24px;margin-bottom:24px;box-shadow:0 4px 20px rgba(0,0,0,.05);}
+h1{margin-bottom:24px;}
+form{display:flex;gap:16px;align-items:end;flex-wrap:wrap;}
+label{display:flex;flex-direction:column;gap:6px;font-weight:bold;}
+input{padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;}
+button{padding:11px 20px;border:none;border-radius:8px;background:#111;color:white;cursor:pointer;}
+.controls{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:24px;}
+.controls label{flex-direction:row;align-items:center;}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
+.kpi{background:#111;color:white;border-radius:16px;padding:20px;}
+.kpi h3{margin:0 0 8px;font-size:14px;}
+.kpi h2{margin:0;font-size:28px;}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+<h1>AI広告ダッシュボード v3</h1>
+
+<div class="card">
+<h2>検索条件</h2>
+
+<form method="GET" action="/main-dashboard-v3">
+<label>
+開始日
+<input type="date" name="start" value="${start || ''}">
+</label>
+
+<label>
+終了日
+<input type="date" name="end" value="${end || ''}">
+</label>
+
+<button type="submit">検索</button>
+<a href="/main-dashboard-v3">リセット</a>
+</form>
+</div>
+
+<div class="kpis">
+  <div class="kpi"><h3>総クリック</h3><h2>${totalClicks}</h2></div>
+  <div class="kpi"><h3>総表示回数</h3><h2>${totalImpressions}</h2></div>
+  <div class="kpi"><h3>平均CTR</h3><h2>${avgCtr}%</h2></div>
+</div>
+
+<div class="card">
+
+<h2>推移グラフ</h2>
+
+<div class="controls">
+<label><input type="checkbox" checked id="ctrCheck">CTR推移</label>
+<label><input type="checkbox" checked id="clicksCheck">クリック数推移</label>
+<label><input type="checkbox" checked id="impressionsCheck">表示回数推移</label>
+<label><input type="checkbox" checked id="cpcCheck">CPC推移</label>
+<label><input type="checkbox" checked id="cvCheck">CV推移</label>
+</div>
+
+<canvas id="myChart"></canvas>
+
+</div>
+
+</div>
+
+<script>
+const labels = ${JSON.stringify(labels)}
+
+const datasets = [
+  {
+    label:'CTR (%)',
+    data:${JSON.stringify(ctrData)},
+    borderColor:'#2563eb',
+    backgroundColor:'#2563eb',
+    hidden:false
+  },
+  {
+    label:'クリック数',
+    data:${JSON.stringify(clicksData)},
+    borderColor:'#16a34a',
+    backgroundColor:'#16a34a',
+    hidden:false
+  },
+  {
+    label:'表示回数',
+    data:${JSON.stringify(impressionsData)},
+    borderColor:'#9333ea',
+    backgroundColor:'#9333ea',
+    hidden:false
+  },
+  {
+    label:'CPC',
+    data:${JSON.stringify(cpcData)},
+    borderColor:'#f97316',
+    backgroundColor:'#f97316',
+    hidden:false
+  },
+  {
+    label:'CV',
+    data:${JSON.stringify(cvData)},
+    borderColor:'#dc2626',
+    backgroundColor:'#dc2626',
+    hidden:false
+  }
+]
+
+const chart = new Chart(document.getElementById('myChart'), {
+  type:'line',
+  data:{ labels, datasets },
+  options:{
+    responsive:true,
+    interaction:{ mode:'index', intersect:false },
+    plugins:{ legend:{ position:'top' } },
+    scales:{ y:{ beginAtZero:true } }
+  }
+})
+
+const checks = ['ctrCheck','clicksCheck','impressionsCheck','cpcCheck','cvCheck']
+
+checks.forEach((id, index) => {
+  document.getElementById(id).addEventListener('change', e => {
+    chart.data.datasets[index].hidden = !e.target.checked
+    chart.update()
+  })
+})
+</script>
+
+</body>
+</html>
+
+    `)
+
+  } catch(error) {
+
+    res.status(500).send(error.message)
+
+  }
+
+})
+
