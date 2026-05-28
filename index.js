@@ -694,13 +694,9 @@ app.get('/dashboard-v4', async (req, res) => {
       .select('*')
       .order('report_date', { ascending: true })
 
-    if (start) {
-      query = query.gte('report_date', start)
-    }
+    query = query.gte('report_date', start)
 
-    if (end) {
-      query = query.lte('report_date', end)
-    }
+    query = query.lte('report_date', end)
 
     if (campaign) {
       query = query.eq('campaign_name', campaign)
@@ -830,13 +826,9 @@ app.get('/dashboard-v4', async (req, res) => {
       .select('*')
       .order('report_date', { ascending: true })
 
-    if (start) {
-      query = query.gte('report_date', start)
-    }
+    query = query.gte('report_date', start)
 
-    if (end) {
-      query = query.lte('report_date', end)
-    }
+    query = query.lte('report_date', end)
 
     if (campaign) {
       query = query.eq('campaign_name', campaign)
@@ -1038,13 +1030,9 @@ app.get('/keywords-dashboard', async (req, res) => {
       .select('*')
       .order('report_date', { ascending: true })
 
-    if (start) {
-      query = query.gte('report_date', start)
-    }
+    query = query.gte('report_date', start)
 
-    if (end) {
-      query = query.lte('report_date', end)
-    }
+    query = query.lte('report_date', end)
 
     if (campaign) {
       query = query.eq('campaign_name', campaign)
@@ -1646,13 +1634,9 @@ app.get('/search-terms-dashboard', async (req, res) => {
       .select('*')
       .order('report_date', { ascending: false })
 
-    if (start) {
-      query = query.gte('report_date', start)
-    }
+    query = query.gte('report_date', start)
 
-    if (end) {
-      query = query.lte('report_date', end)
-    }
+    query = query.lte('report_date', end)
 
     if (term) {
       query = query.ilike('search_term', `%${term}%`)
@@ -3695,20 +3679,24 @@ app.get('/main-dashboard-v3', async (req, res) => {
 
   try {
 
-    const { start, end } = req.query
+    const today = new Date()
+    const oneMonthAgo = new Date()
+    oneMonthAgo.setMonth(today.getMonth() - 1)
+
+    const defaultEnd = today.toISOString().slice(0, 10)
+    const defaultStart = oneMonthAgo.toISOString().slice(0, 10)
+
+    const start = req.query.start || defaultStart
+    const end = req.query.end || defaultEnd
 
     let query = supabase
       .from('campaign_reports')
       .select('*')
       .order('report_date', { ascending:true })
 
-    if (start) {
-      query = query.gte('report_date', start)
-    }
+    query = query.gte('report_date', start)
 
-    if (end) {
-      query = query.lte('report_date', end)
-    }
+    query = query.lte('report_date', end)
 
     const { data: campaigns, error } = await query
 
@@ -3742,7 +3730,8 @@ h1{margin-bottom:24px;}
 form{display:flex;gap:16px;align-items:end;flex-wrap:wrap;}
 label{display:flex;flex-direction:column;gap:6px;font-weight:bold;}
 input{padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;}
-button{padding:11px 20px;border:none;border-radius:8px;background:#111;color:white;cursor:pointer;}
+button,.reset-btn{padding:11px 20px;border:none;border-radius:8px;background:#111;color:white;cursor:pointer;text-decoration:none;display:inline-block;font-size:14px;}
+.reset-btn{background:#9ca3af;color:white;}
 .controls{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:24px;}
 .controls label{flex-direction:row;align-items:center;}
 .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
@@ -3772,7 +3761,7 @@ button{padding:11px 20px;border:none;border-radius:8px;background:#111;color:whi
 </label>
 
 <button type="submit">検索</button>
-<a href="/main-dashboard-v3">リセット</a>
+<a class="reset-btn" href="/main-dashboard-v3">リセット</a>
 </form>
 </div>
 
@@ -3880,20 +3869,24 @@ app.get('/main-dashboard-v3', async (req, res) => {
 
   try {
 
-    const { start, end } = req.query
+    const today = new Date()
+    const oneMonthAgo = new Date()
+    oneMonthAgo.setMonth(today.getMonth() - 1)
+
+    const defaultEnd = today.toISOString().slice(0, 10)
+    const defaultStart = oneMonthAgo.toISOString().slice(0, 10)
+
+    const start = req.query.start || defaultStart
+    const end = req.query.end || defaultEnd
 
     let query = supabase
       .from('campaign_reports')
       .select('*')
       .order('report_date', { ascending:true })
 
-    if (start) {
-      query = query.gte('report_date', start)
-    }
+    query = query.gte('report_date', start)
 
-    if (end) {
-      query = query.lte('report_date', end)
-    }
+    query = query.lte('report_date', end)
 
     const { data: campaigns, error } = await query
 
@@ -3927,7 +3920,8 @@ h1{margin-bottom:24px;}
 form{display:flex;gap:16px;align-items:end;flex-wrap:wrap;}
 label{display:flex;flex-direction:column;gap:6px;font-weight:bold;}
 input{padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;}
-button{padding:11px 20px;border:none;border-radius:8px;background:#111;color:white;cursor:pointer;}
+button,.reset-btn{padding:11px 20px;border:none;border-radius:8px;background:#111;color:white;cursor:pointer;text-decoration:none;display:inline-block;font-size:14px;}
+.reset-btn{background:#9ca3af;color:white;}
 .controls{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:24px;}
 .controls label{flex-direction:row;align-items:center;}
 .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
@@ -3957,7 +3951,7 @@ button{padding:11px 20px;border:none;border-radius:8px;background:#111;color:whi
 </label>
 
 <button type="submit">検索</button>
-<a href="/main-dashboard-v3">リセット</a>
+<a class="reset-btn" href="/main-dashboard-v3">リセット</a>
 </form>
 </div>
 
@@ -4065,20 +4059,24 @@ app.get('/main-dashboard-v3', async (req, res) => {
 
   try {
 
-    const { start, end } = req.query
+    const today = new Date()
+    const oneMonthAgo = new Date()
+    oneMonthAgo.setMonth(today.getMonth() - 1)
+
+    const defaultEnd = today.toISOString().slice(0, 10)
+    const defaultStart = oneMonthAgo.toISOString().slice(0, 10)
+
+    const start = req.query.start || defaultStart
+    const end = req.query.end || defaultEnd
 
     let query = supabase
       .from('campaign_reports')
       .select('*')
       .order('report_date', { ascending:true })
 
-    if (start) {
-      query = query.gte('report_date', start)
-    }
+    query = query.gte('report_date', start)
 
-    if (end) {
-      query = query.lte('report_date', end)
-    }
+    query = query.lte('report_date', end)
 
     const { data: campaigns, error } = await query
 
@@ -4112,7 +4110,8 @@ h1{margin-bottom:24px;}
 form{display:flex;gap:16px;align-items:end;flex-wrap:wrap;}
 label{display:flex;flex-direction:column;gap:6px;font-weight:bold;}
 input{padding:10px;border:1px solid #ddd;border-radius:8px;font-size:14px;}
-button{padding:11px 20px;border:none;border-radius:8px;background:#111;color:white;cursor:pointer;}
+button,.reset-btn{padding:11px 20px;border:none;border-radius:8px;background:#111;color:white;cursor:pointer;text-decoration:none;display:inline-block;font-size:14px;}
+.reset-btn{background:#9ca3af;color:white;}
 .controls{display:flex;flex-wrap:wrap;gap:16px;margin-bottom:24px;}
 .controls label{flex-direction:row;align-items:center;}
 .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;}
@@ -4142,7 +4141,7 @@ button{padding:11px 20px;border:none;border-radius:8px;background:#111;color:whi
 </label>
 
 <button type="submit">検索</button>
-<a href="/main-dashboard-v3">リセット</a>
+<a class="reset-btn" href="/main-dashboard-v3">リセット</a>
 </form>
 </div>
 
