@@ -2864,3 +2864,153 @@ app.post('/profile-settings', async (req, res) => {
   }
 })
 
+
+app.get('/profile-settings-v2', async (req, res) => {
+  try {
+    const errorMessage = req.query.error || ''
+    const { data: users } = await supabase.from('users').select('*').limit(1)
+    const user = users?.[0] || {}
+
+    res.send(`
+<html>
+<head>
+<meta charset="UTF-8">
+<title>マイページ設定 v2</title>
+<style>
+body{font-family:sans-serif;background:#f5f5f5;padding:40px;}
+.container{max-width:900px;margin:auto;}
+.card{background:white;padding:32px;border-radius:18px;margin-bottom:24px;}
+label{display:block;margin-top:16px;font-weight:bold;}
+input{width:100%;padding:12px;margin-top:6px;border:1px solid #ddd;border-radius:8px;}
+button{margin-top:24px;padding:14px 28px;background:#111;color:white;border:0;border-radius:10px;}
+.input-row{display:flex;gap:8px;align-items:center;}
+.input-row input{flex:1;}
+.eye{width:44px;padding:12px;margin-top:6px;background:#eee;color:#111;border-radius:8px;}
+.error{background:#ffe5e5;color:#b00020;padding:12px;border-radius:8px;margin-bottom:16px;}
+</style>
+</head>
+<body>
+<div class="container">
+<a href="/main-dashboard">← ダッシュボードへ戻る</a>
+<h1>マイページ設定</h1>
+
+${errorMessage ? `<div class="error">${errorMessage}</div>` : ''}
+
+<form method="POST" action="/profile-settings-v2">
+
+<div class="card">
+<h2>基本情報</h2>
+<label>会社名</label><input name="company_name" value="${user.company_name || ''}">
+<label>担当者名</label><input name="contact_name" value="${user.contact_name || ''}">
+<label>電話番号</label><input name="phone" value="${user.phone || ''}">
+<label>メールアドレス</label><input name="email" value="${user.email || ''}">
+</div>
+
+<div class="card">
+<h2>ログイン設定</h2>
+<label>新しいパスワード</label>
+<div class="input-row">
+<input id="password" name="password" type="password" placeholder="変更する場合のみ入力">
+<button class="eye" type="button" onclick="toggle('password')">👁</button>
+</div>
+
+<label>新しいパスワード確認</label>
+<div class="input-row">
+<input id="password_confirm" name="password_confirm" type="password" placeholder="もう一度入力">
+<button class="eye" type="button" onclick="toggle('password_confirm')">👁</button>
+</div>
+</div>
+
+<div class="card">
+<h2>API設定</h2>
+
+<label>OpenAI API Key</label>
+<div class="input-row">
+<input id="openai_api_key" name="openai_api_key" type="password" value="${user.openai_api_key || ''}">
+<button class="eye" type="button" onclick="toggle('openai_api_key')">👁</button>
+</div>
+
+<label>Google Ads Customer ID</label>
+<input name="google_ads_customer_id" value="${user.google_ads_customer_id || ''}">
+
+<label>Google Ads Login Customer ID</label>
+<input name="google_ads_login_customer_id" value="${user.google_ads_login_customer_id || ''}">
+
+<label>Google Ads Developer Token</label>
+<div class="input-row">
+<input id="google_ads_developer_token" name="google_ads_developer_token" type="password" value="${user.google_ads_developer_token || ''}">
+<button class="eye" type="button" onclick="toggle('google_ads_developer_token')">👁</button>
+</div>
+
+<label>Google Ads Refresh Token</label>
+<div class="input-row">
+<input id="google_ads_refresh_token" name="google_ads_refresh_token" type="password" value="${user.google_ads_refresh_token || ''}">
+<button class="eye" type="button" onclick="toggle('google_ads_refresh_token')">👁</button>
+</div>
+</div>
+
+<button type="submit">保存</button>
+</form>
+</div>
+
+<script>
+function toggle(id){
+  const el = document.getElementById(id)
+  el.type = el.type === 'password' ? 'text' : 'password'
+}
+</script>
+</body>
+</html>
+    `)
+  } catch(error) {
+    res.status(500).send(error.message)
+  }
+})
+
+app.post('/profile-settings-v2', async (req, res) => {
+  try {
+    const {
+      company_name, contact_name, phone, email,
+      password, password_confirm,
+      openai_api_key, google_ads_customer_id,
+      google_ads_login_customer_id,
+      google_ads_developer_token, google_ads_refresh_token
+    } = req.body
+
+    if (password || password_confirm) {
+      if (password !== password_confirm) {
+        return res.redirect('/profile-settings-v2?error=' + encodeURIComponent('パスワードと確認用パスワードが一致しません'))
+      }
+    }
+
+    const updateData = {
+      company_name,
+      contact_name,
+      phone,
+      email,
+      openai_api_key,
+      google_ads_customer_id,
+      google_ads_login_customer_id,
+      google_ads_developer_token,
+      google_ads_refresh_token
+    }
+
+    if (password && password.trim() !== '') {
+      updateData.password = password
+    }
+
+    const { data: users } = await supabase.from('users').select('*').limit(1)
+    const user = users?.[0]
+
+    if (user) {
+      await supabase.from('users').update(updateData).eq('id', user.id)
+    } else {
+      await supabase.from('users').insert([updateData])
+    }
+
+    res.redirect('/profile-settings-v2')
+  } catch(error) {
+    res.status(500).send(error.message)
+  }
+})
+
