@@ -3534,7 +3534,7 @@ CV推移
 
 </div>
 
-<canvas id="myChart"></canvas>
+<div style="height:520px;"><canvas id="myChart"></canvas></div>
 
 </div>
 
@@ -3601,6 +3601,7 @@ const chart = new Chart(ctx, {
 
   options:{
     responsive:true,
+    maintainAspectRatio:false,
     interaction:{
       mode:'index',
       intersect:false
@@ -3826,7 +3827,7 @@ button,.reset-btn{padding:11px 20px;border:none;border-radius:8px;background:#11
 <label><input type="checkbox" checked id="cvCheck">CV推移</label>
 </div>
 
-<canvas id="myChart"></canvas>
+<div style="height:520px;"><canvas id="myChart"></canvas></div>
 
 </div>
 
@@ -3878,9 +3879,20 @@ const chart = new Chart(document.getElementById('myChart'), {
   data:{ labels, datasets },
   options:{
     responsive:true,
+    maintainAspectRatio:false,
     interaction:{ mode:'index', intersect:false },
     plugins:{ legend:{ position:'top' } },
-    scales:{ y:{ beginAtZero:true } }
+    scales:{
+      x:{
+        ticks:{
+          maxRotation:90,
+          minRotation:90
+        }
+      },
+      y:{
+        beginAtZero:true
+      }
+    }
   }
 })
 
@@ -4059,7 +4071,7 @@ button,.reset-btn{padding:11px 20px;border:none;border-radius:8px;background:#11
 <label><input type="checkbox" checked id="cvCheck">CV推移</label>
 </div>
 
-<canvas id="myChart"></canvas>
+<div style="height:520px;"><canvas id="myChart"></canvas></div>
 
 </div>
 
@@ -4111,9 +4123,20 @@ const chart = new Chart(document.getElementById('myChart'), {
   data:{ labels, datasets },
   options:{
     responsive:true,
+    maintainAspectRatio:false,
     interaction:{ mode:'index', intersect:false },
     plugins:{ legend:{ position:'top' } },
-    scales:{ y:{ beginAtZero:true } }
+    scales:{
+      x:{
+        ticks:{
+          maxRotation:90,
+          minRotation:90
+        }
+      },
+      y:{
+        beginAtZero:true
+      }
+    }
   }
 })
 
@@ -4292,7 +4315,7 @@ button,.reset-btn{padding:11px 20px;border:none;border-radius:8px;background:#11
 <label><input type="checkbox" checked id="cvCheck">CV推移</label>
 </div>
 
-<canvas id="myChart"></canvas>
+<div style="height:520px;"><canvas id="myChart"></canvas></div>
 
 </div>
 
@@ -4344,9 +4367,20 @@ const chart = new Chart(document.getElementById('myChart'), {
   data:{ labels, datasets },
   options:{
     responsive:true,
+    maintainAspectRatio:false,
     interaction:{ mode:'index', intersect:false },
     plugins:{ legend:{ position:'top' } },
-    scales:{ y:{ beginAtZero:true } }
+    scales:{
+      x:{
+        ticks:{
+          maxRotation:90,
+          minRotation:90
+        }
+      },
+      y:{
+        beginAtZero:true
+      }
+    }
   }
 })
 
