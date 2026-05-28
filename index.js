@@ -2397,3 +2397,131 @@ a{display:inline-block;margin-right:12px;}
   }
 })
 
+
+app.get('/customers', async (req, res) => {
+  try {
+    const { data: customers, error } = await supabase
+      .from('customers')
+      .select('*')
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    res.send(`
+<html>
+<head>
+<meta charset="UTF-8">
+<title>顧客管理</title>
+<style>
+body{font-family:sans-serif;background:#f5f5f5;padding:24px;}
+.card{background:white;padding:24px;border-radius:12px;margin-bottom:24px;}
+input,textarea{width:100%;padding:10px;margin:6px 0 12px;font-size:14px;}
+button{padding:12px 20px;background:#111;color:white;border:0;border-radius:8px;}
+table{width:100%;border-collapse:collapse;background:white;}
+th,td{border-bottom:1px solid #ddd;padding:8px;text-align:left;}
+th{background:#eee;}
+</style>
+</head>
+<body>
+
+<h1>顧客管理</h1>
+
+<p>
+<a href="/main-dashboard">メインダッシュボード</a>
+</p>
+
+<div class="card">
+<h2>顧客追加</h2>
+
+<form method="POST" action="/customers">
+<label>顧客名</label>
+<input name="customer_name" required>
+
+<label>会社名</label>
+<input name="company_name">
+
+<label>担当者名</label>
+<input name="contact_name">
+
+<label>電話番号</label>
+<input name="phone">
+
+<label>メールアドレス</label>
+<input name="email" type="email">
+
+<label>メモ</label>
+<textarea name="memo"></textarea>
+
+<button type="submit">登録</button>
+</form>
+</div>
+
+<div class="card">
+<h2>顧客一覧</h2>
+
+<table>
+<tr>
+<th>顧客名</th>
+<th>会社名</th>
+<th>担当者</th>
+<th>電話</th>
+<th>メール</th>
+<th>メモ</th>
+<th>登録日</th>
+</tr>
+
+${(customers || []).map(c => `
+<tr>
+<td>${c.customer_name || ''}</td>
+<td>${c.company_name || ''}</td>
+<td>${c.contact_name || ''}</td>
+<td>${c.phone || ''}</td>
+<td>${c.email || ''}</td>
+<td>${c.memo || ''}</td>
+<td>${c.created_at || ''}</td>
+</tr>
+`).join('')}
+
+</table>
+</div>
+
+</body>
+</html>
+    `)
+  } catch (error) {
+    res.status(500).send(error.message)
+  }
+})
+
+app.post('/customers', async (req, res) => {
+  try {
+    const {
+      customer_name,
+      company_name,
+      contact_name,
+      phone,
+      email,
+      memo
+    } = req.body
+
+    const { error } = await supabase
+      .from('customers')
+      .insert([
+        {
+          customer_name,
+          company_name,
+          contact_name,
+          phone,
+          email,
+          memo
+        }
+      ])
+
+    if (error) throw error
+
+    res.redirect('/customers')
+  } catch (error) {
+    res.status(500).send(error.message)
+  }
+})
+
