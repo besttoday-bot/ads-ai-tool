@@ -2331,8 +2331,8 @@ a{display:inline-block;margin-right:12px;}
 </p>
 
 <div class="kpis">
-  <div class="kpi"><h3>総クリック</h3><h2>${totalClicks}</h2></div>
-  <div class="kpi"><h3>総表示回数</h3><h2>${totalImpressions}</h2></div>
+  <div class="kpi"><h3>総クリック</h3><h2>${totalClicks.toLocaleString()}</h2></div>
+  <div class="kpi"><h3>総表示回数</h3><h2>${totalImpressions.toLocaleString()}</h2></div>
   <div class="kpi"><h3>平均CTR</h3><h2>${avgCtr}%</h2></div>
 </div>
 
@@ -3702,17 +3702,60 @@ app.get('/main-dashboard-v3', async (req, res) => {
 
     if (error) throw error
 
-    const labels = campaigns.map(r => r.report_date)
+    const grouped = {}
 
-    const ctrData = campaigns.map(r => Number(r.ctr || 0) * 100)
-    const clicksData = campaigns.map(r => Number(r.clicks || 0))
-    const impressionsData = campaigns.map(r => Number(r.impressions || 0))
-    const cpcData = campaigns.map(r => Number(r.average_cpc || 0))
-    const cvData = campaigns.map(r => Number(r.conversions || 0))
+    campaigns.forEach(r => {
 
-    const totalClicks = campaigns.reduce((sum, r) => sum + Number(r.clicks || 0), 0)
-    const totalImpressions = campaigns.reduce((sum, r) => sum + Number(r.impressions || 0), 0)
-    const avgCtr = totalImpressions ? ((totalClicks / totalImpressions) * 100).toFixed(2) : 0
+      const date = r.report_date
+
+      if (!grouped[date]) {
+        grouped[date] = {
+          clicks:0,
+          impressions:0,
+          cpc:0,
+          conversions:0,
+          ctr:0,
+          count:0
+        }
+      }
+
+      grouped[date].clicks += Number(r.clicks || 0)
+      grouped[date].impressions += Number(r.impressions || 0)
+      grouped[date].cpc += Number(r.average_cpc || 0)
+      grouped[date].conversions += Number(r.conversions || 0)
+      grouped[date].ctr += Number(r.ctr || 0) * 100
+      grouped[date].count += 1
+
+    })
+
+    const labels = Object.keys(grouped)
+
+    const ctrData = labels.map(date =>
+      grouped[date].ctr / grouped[date].count
+    )
+
+    const clicksData = labels.map(date =>
+      grouped[date].clicks
+    )
+
+    const impressionsData = labels.map(date =>
+      grouped[date].impressions
+    )
+
+    const cpcData = labels.map(date =>
+      grouped[date].cpc / grouped[date].count
+    )
+
+    const cvData = labels.map(date =>
+      grouped[date].conversions
+    )
+
+    const totalClicks = clicksData.reduce((a,b)=>a+b,0)
+    const totalImpressions = impressionsData.reduce((a,b)=>a+b,0)
+
+    const avgCtr = totalImpressions
+      ? ((totalClicks / totalImpressions) * 100).toFixed(2)
+      : 0
 
     res.send(`
 
@@ -3766,8 +3809,8 @@ button,.reset-btn{padding:11px 20px;border:none;border-radius:8px;background:#11
 </div>
 
 <div class="kpis">
-  <div class="kpi"><h3>総クリック</h3><h2>${totalClicks}</h2></div>
-  <div class="kpi"><h3>総表示回数</h3><h2>${totalImpressions}</h2></div>
+  <div class="kpi"><h3>総クリック</h3><h2>${totalClicks.toLocaleString()}</h2></div>
+  <div class="kpi"><h3>総表示回数</h3><h2>${totalImpressions.toLocaleString()}</h2></div>
   <div class="kpi"><h3>平均CTR</h3><h2>${avgCtr}%</h2></div>
 </div>
 
@@ -3892,17 +3935,60 @@ app.get('/main-dashboard-v3', async (req, res) => {
 
     if (error) throw error
 
-    const labels = campaigns.map(r => r.report_date)
+    const grouped = {}
 
-    const ctrData = campaigns.map(r => Number(r.ctr || 0) * 100)
-    const clicksData = campaigns.map(r => Number(r.clicks || 0))
-    const impressionsData = campaigns.map(r => Number(r.impressions || 0))
-    const cpcData = campaigns.map(r => Number(r.average_cpc || 0))
-    const cvData = campaigns.map(r => Number(r.conversions || 0))
+    campaigns.forEach(r => {
 
-    const totalClicks = campaigns.reduce((sum, r) => sum + Number(r.clicks || 0), 0)
-    const totalImpressions = campaigns.reduce((sum, r) => sum + Number(r.impressions || 0), 0)
-    const avgCtr = totalImpressions ? ((totalClicks / totalImpressions) * 100).toFixed(2) : 0
+      const date = r.report_date
+
+      if (!grouped[date]) {
+        grouped[date] = {
+          clicks:0,
+          impressions:0,
+          cpc:0,
+          conversions:0,
+          ctr:0,
+          count:0
+        }
+      }
+
+      grouped[date].clicks += Number(r.clicks || 0)
+      grouped[date].impressions += Number(r.impressions || 0)
+      grouped[date].cpc += Number(r.average_cpc || 0)
+      grouped[date].conversions += Number(r.conversions || 0)
+      grouped[date].ctr += Number(r.ctr || 0) * 100
+      grouped[date].count += 1
+
+    })
+
+    const labels = Object.keys(grouped)
+
+    const ctrData = labels.map(date =>
+      grouped[date].ctr / grouped[date].count
+    )
+
+    const clicksData = labels.map(date =>
+      grouped[date].clicks
+    )
+
+    const impressionsData = labels.map(date =>
+      grouped[date].impressions
+    )
+
+    const cpcData = labels.map(date =>
+      grouped[date].cpc / grouped[date].count
+    )
+
+    const cvData = labels.map(date =>
+      grouped[date].conversions
+    )
+
+    const totalClicks = clicksData.reduce((a,b)=>a+b,0)
+    const totalImpressions = impressionsData.reduce((a,b)=>a+b,0)
+
+    const avgCtr = totalImpressions
+      ? ((totalClicks / totalImpressions) * 100).toFixed(2)
+      : 0
 
     res.send(`
 
@@ -3956,8 +4042,8 @@ button,.reset-btn{padding:11px 20px;border:none;border-radius:8px;background:#11
 </div>
 
 <div class="kpis">
-  <div class="kpi"><h3>総クリック</h3><h2>${totalClicks}</h2></div>
-  <div class="kpi"><h3>総表示回数</h3><h2>${totalImpressions}</h2></div>
+  <div class="kpi"><h3>総クリック</h3><h2>${totalClicks.toLocaleString()}</h2></div>
+  <div class="kpi"><h3>総表示回数</h3><h2>${totalImpressions.toLocaleString()}</h2></div>
   <div class="kpi"><h3>平均CTR</h3><h2>${avgCtr}%</h2></div>
 </div>
 
@@ -4082,17 +4168,60 @@ app.get('/main-dashboard-v3', async (req, res) => {
 
     if (error) throw error
 
-    const labels = campaigns.map(r => r.report_date)
+    const grouped = {}
 
-    const ctrData = campaigns.map(r => Number(r.ctr || 0) * 100)
-    const clicksData = campaigns.map(r => Number(r.clicks || 0))
-    const impressionsData = campaigns.map(r => Number(r.impressions || 0))
-    const cpcData = campaigns.map(r => Number(r.average_cpc || 0))
-    const cvData = campaigns.map(r => Number(r.conversions || 0))
+    campaigns.forEach(r => {
 
-    const totalClicks = campaigns.reduce((sum, r) => sum + Number(r.clicks || 0), 0)
-    const totalImpressions = campaigns.reduce((sum, r) => sum + Number(r.impressions || 0), 0)
-    const avgCtr = totalImpressions ? ((totalClicks / totalImpressions) * 100).toFixed(2) : 0
+      const date = r.report_date
+
+      if (!grouped[date]) {
+        grouped[date] = {
+          clicks:0,
+          impressions:0,
+          cpc:0,
+          conversions:0,
+          ctr:0,
+          count:0
+        }
+      }
+
+      grouped[date].clicks += Number(r.clicks || 0)
+      grouped[date].impressions += Number(r.impressions || 0)
+      grouped[date].cpc += Number(r.average_cpc || 0)
+      grouped[date].conversions += Number(r.conversions || 0)
+      grouped[date].ctr += Number(r.ctr || 0) * 100
+      grouped[date].count += 1
+
+    })
+
+    const labels = Object.keys(grouped)
+
+    const ctrData = labels.map(date =>
+      grouped[date].ctr / grouped[date].count
+    )
+
+    const clicksData = labels.map(date =>
+      grouped[date].clicks
+    )
+
+    const impressionsData = labels.map(date =>
+      grouped[date].impressions
+    )
+
+    const cpcData = labels.map(date =>
+      grouped[date].cpc / grouped[date].count
+    )
+
+    const cvData = labels.map(date =>
+      grouped[date].conversions
+    )
+
+    const totalClicks = clicksData.reduce((a,b)=>a+b,0)
+    const totalImpressions = impressionsData.reduce((a,b)=>a+b,0)
+
+    const avgCtr = totalImpressions
+      ? ((totalClicks / totalImpressions) * 100).toFixed(2)
+      : 0
 
     res.send(`
 
@@ -4146,8 +4275,8 @@ button,.reset-btn{padding:11px 20px;border:none;border-radius:8px;background:#11
 </div>
 
 <div class="kpis">
-  <div class="kpi"><h3>総クリック</h3><h2>${totalClicks}</h2></div>
-  <div class="kpi"><h3>総表示回数</h3><h2>${totalImpressions}</h2></div>
+  <div class="kpi"><h3>総クリック</h3><h2>${totalClicks.toLocaleString()}</h2></div>
+  <div class="kpi"><h3>総表示回数</h3><h2>${totalImpressions.toLocaleString()}</h2></div>
   <div class="kpi"><h3>平均CTR</h3><h2>${avgCtr}%</h2></div>
 </div>
 
