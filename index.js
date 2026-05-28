@@ -2722,3 +2722,145 @@ app.post('/profile', async (req, res) => {
 
 })
 
+
+app.get('/profile-settings', async (req, res) => {
+  try {
+    const { data: users } = await supabase
+      .from('users')
+      .select('*')
+      .limit(1)
+
+    const user = users?.[0] || {}
+
+    res.send(`
+<html>
+<head>
+<meta charset="UTF-8">
+<title>マイページ設定</title>
+<style>
+body{font-family:sans-serif;background:#f5f5f5;padding:40px;}
+.container{max-width:900px;margin:auto;}
+.card{background:white;padding:32px;border-radius:18px;margin-bottom:24px;}
+label{display:block;margin-top:16px;font-weight:bold;}
+input{width:100%;padding:12px;margin-top:6px;border:1px solid #ddd;border-radius:8px;}
+button{margin-top:24px;padding:14px 28px;background:#111;color:white;border:0;border-radius:10px;}
+small{color:#666;}
+</style>
+</head>
+<body>
+<div class="container">
+<a href="/main-dashboard">← ダッシュボードへ戻る</a>
+<h1>マイページ設定</h1>
+
+<form method="POST" action="/profile-settings">
+
+<div class="card">
+<h2>基本情報</h2>
+
+<label>会社名</label>
+<input name="company_name" value="${user.company_name || ''}">
+
+<label>担当者名</label>
+<input name="contact_name" value="${user.contact_name || ''}">
+
+<label>電話番号</label>
+<input name="phone" value="${user.phone || ''}">
+
+<label>メールアドレス</label>
+<input name="email" value="${user.email || ''}">
+</div>
+
+<div class="card">
+<h2>ログイン設定</h2>
+
+<label>新しいパスワード</label>
+<input name="password" type="password" placeholder="変更する場合のみ入力">
+<small>空欄の場合は変更しません。</small>
+</div>
+
+<div class="card">
+<h2>API設定</h2>
+
+<label>OpenAI API Key</label>
+<input name="openai_api_key" value="${user.openai_api_key || ''}">
+
+<label>Google Ads Customer ID</label>
+<input name="google_ads_customer_id" value="${user.google_ads_customer_id || ''}">
+
+<label>Google Ads Login Customer ID</label>
+<input name="google_ads_login_customer_id" value="${user.google_ads_login_customer_id || ''}">
+
+<label>Google Ads Developer Token</label>
+<input name="google_ads_developer_token" value="${user.google_ads_developer_token || ''}">
+
+<label>Google Ads Refresh Token</label>
+<input name="google_ads_refresh_token" value="${user.google_ads_refresh_token || ''}">
+</div>
+
+<button type="submit">保存</button>
+
+</form>
+</div>
+</body>
+</html>
+    `)
+  } catch(error) {
+    res.status(500).send(error.message)
+  }
+})
+
+app.post('/profile-settings', async (req, res) => {
+  try {
+    const {
+      company_name,
+      contact_name,
+      phone,
+      email,
+      password,
+      openai_api_key,
+      google_ads_customer_id,
+      google_ads_login_customer_id,
+      google_ads_developer_token,
+      google_ads_refresh_token
+    } = req.body
+
+    const updateData = {
+      company_name,
+      contact_name,
+      phone,
+      email,
+      openai_api_key,
+      google_ads_customer_id,
+      google_ads_login_customer_id,
+      google_ads_developer_token,
+      google_ads_refresh_token
+    }
+
+    if (password && password.trim() !== '') {
+      updateData.password = password
+    }
+
+    const { data: users } = await supabase
+      .from('users')
+      .select('*')
+      .limit(1)
+
+    const user = users?.[0]
+
+    if (user) {
+      await supabase
+        .from('users')
+        .update(updateData)
+        .eq('id', user.id)
+    } else {
+      await supabase
+        .from('users')
+        .insert([updateData])
+    }
+
+    res.redirect('/profile-settings')
+  } catch(error) {
+    res.status(500).send(error.message)
+  }
+})
+
