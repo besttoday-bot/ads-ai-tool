@@ -3420,3 +3420,273 @@ app.post('/profile-settings-v4', async (req, res) => {
   }
 })
 
+
+app.get('/main-dashboard-v2', async (req, res) => {
+
+  try {
+
+    const { data: campaigns } = await supabase
+      .from('campaign_reports')
+      .select('*')
+      .order('report_date', { ascending:true })
+      .limit(30)
+
+    const labels = campaigns.map(r => r.report_date)
+
+    const ctrData = campaigns.map(r =>
+      Number(r.ctr || 0) * 100
+    )
+
+    const clicksData = campaigns.map(r =>
+      Number(r.clicks || 0)
+    )
+
+    const impressionsData = campaigns.map(r =>
+      Number(r.impressions || 0)
+    )
+
+    const cpcData = campaigns.map(r =>
+      Number(r.average_cpc || 0)
+    )
+
+    const cvData = campaigns.map(r =>
+      Number(r.conversions || 0)
+    )
+
+    res.send(`
+
+<html>
+<head>
+
+<meta charset="UTF-8">
+
+<title>AI広告ダッシュボード</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+body{
+  font-family:sans-serif;
+  background:#f5f5f5;
+  padding:32px;
+}
+
+.container{
+  max-width:1200px;
+  margin:auto;
+}
+
+.card{
+  background:white;
+  border-radius:20px;
+  padding:24px;
+  margin-bottom:24px;
+  box-shadow:0 4px 20px rgba(0,0,0,.05);
+}
+
+h1{
+  margin-bottom:24px;
+}
+
+.controls{
+  display:flex;
+  flex-wrap:wrap;
+  gap:16px;
+  margin-bottom:24px;
+}
+
+label{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-weight:bold;
+}
+
+canvas{
+  background:white;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>AI広告ダッシュボード</h1>
+
+<div class="card">
+
+<h2>推移グラフ</h2>
+
+<div class="controls">
+
+<label>
+<input type="checkbox" checked id="ctrCheck">
+CTR推移
+</label>
+
+<label>
+<input type="checkbox" checked id="clicksCheck">
+クリック数推移
+</label>
+
+<label>
+<input type="checkbox" checked id="impressionsCheck">
+表示回数推移
+</label>
+
+<label>
+<input type="checkbox" checked id="cpcCheck">
+CPC推移
+</label>
+
+<label>
+<input type="checkbox" checked id="cvCheck">
+CV推移
+</label>
+
+</div>
+
+<canvas id="myChart"></canvas>
+
+</div>
+
+</div>
+
+<script>
+
+const labels = ${JSON.stringify(labels)}
+
+const datasetsConfig = {
+
+  ctr:{
+    label:'CTR (%)',
+    data:${JSON.stringify(ctrData)},
+    borderColor:'blue',
+    backgroundColor:'blue',
+    hidden:false
+  },
+
+  clicks:{
+    label:'クリック数',
+    data:${JSON.stringify(clicksData)},
+    borderColor:'green',
+    backgroundColor:'green',
+    hidden:false
+  },
+
+  impressions:{
+    label:'表示回数',
+    data:${JSON.stringify(impressionsData)},
+    borderColor:'purple',
+    backgroundColor:'purple',
+    hidden:false
+  },
+
+  cpc:{
+    label:'CPC',
+    data:${JSON.stringify(cpcData)},
+    borderColor:'orange',
+    backgroundColor:'orange',
+    hidden:false
+  },
+
+  cv:{
+    label:'CV',
+    data:${JSON.stringify(cvData)},
+    borderColor:'red',
+    backgroundColor:'red',
+    hidden:false
+  }
+
+}
+
+const ctx = document.getElementById('myChart')
+
+const chart = new Chart(ctx, {
+
+  type:'line',
+
+  data:{
+    labels:labels,
+    datasets:Object.values(datasetsConfig)
+  },
+
+  options:{
+    responsive:true,
+    interaction:{
+      mode:'index',
+      intersect:false
+    },
+    plugins:{
+      legend:{
+        position:'top'
+      }
+    },
+    scales:{
+      y:{
+        beginAtZero:true
+      }
+    }
+  }
+
+})
+
+document.getElementById('ctrCheck')
+.addEventListener('change', e => {
+
+  chart.data.datasets[0].hidden = !e.target.checked
+  chart.update()
+
+})
+
+document.getElementById('clicksCheck')
+.addEventListener('change', e => {
+
+  chart.data.datasets[1].hidden = !e.target.checked
+  chart.update()
+
+})
+
+document.getElementById('impressionsCheck')
+.addEventListener('change', e => {
+
+  chart.data.datasets[2].hidden = !e.target.checked
+  chart.update()
+
+})
+
+document.getElementById('cpcCheck')
+.addEventListener('change', e => {
+
+  chart.data.datasets[3].hidden = !e.target.checked
+  chart.update()
+
+})
+
+document.getElementById('cvCheck')
+.addEventListener('change', e => {
+
+  chart.data.datasets[4].hidden = !e.target.checked
+  chart.update()
+
+})
+
+</script>
+
+</body>
+</html>
+
+    `)
+
+  } catch(error) {
+
+    res.status(500).send(error.message)
+
+  }
+
+})
+
