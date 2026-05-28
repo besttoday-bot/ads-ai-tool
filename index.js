@@ -2525,3 +2525,200 @@ app.post('/customers', async (req, res) => {
   }
 })
 
+
+app.get('/profile', async (req, res) => {
+
+  try {
+
+    const { data: users } = await supabase
+      .from('users')
+      .select('*')
+      .limit(1)
+
+    const user = users?.[0]
+
+    res.send(`
+
+<html>
+<head>
+<meta charset="UTF-8">
+<title>マイページ</title>
+
+<style>
+
+body{
+  font-family:sans-serif;
+  background:#f5f5f5;
+  padding:40px;
+}
+
+.container{
+  max-width:800px;
+  margin:auto;
+}
+
+.card{
+  background:white;
+  padding:32px;
+  border-radius:20px;
+  box-shadow:0 4px 20px rgba(0,0,0,.05);
+}
+
+h1{
+  margin-bottom:24px;
+}
+
+label{
+  display:block;
+  margin-top:16px;
+  margin-bottom:6px;
+  font-weight:bold;
+}
+
+input{
+  width:100%;
+  padding:14px;
+  border:1px solid #ddd;
+  border-radius:10px;
+  font-size:16px;
+}
+
+button{
+  margin-top:24px;
+  background:black;
+  color:white;
+  border:none;
+  padding:14px 28px;
+  border-radius:12px;
+  font-size:16px;
+  cursor:pointer;
+}
+
+.topbar{
+  margin-bottom:24px;
+}
+
+a{
+  color:black;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="topbar">
+<a href="/main-dashboard">← ダッシュボードへ戻る</a>
+</div>
+
+<div class="card">
+
+<h1>マイページ</h1>
+
+<form method="POST" action="/profile">
+
+<label>会社名</label>
+<input
+  name="company_name"
+  value="${user?.company_name || ''}"
+>
+
+<label>担当者名</label>
+<input
+  name="contact_name"
+  value="${user?.contact_name || ''}"
+>
+
+<label>電話番号</label>
+<input
+  name="phone"
+  value="${user?.phone || ''}"
+>
+
+<label>メールアドレス</label>
+<input
+  name="email"
+  value="${user?.email || ''}"
+>
+
+<button type="submit">
+保存
+</button>
+
+</form>
+
+</div>
+
+</div>
+
+</body>
+</html>
+
+    `)
+
+  } catch(error) {
+
+    res.status(500).send(error.message)
+
+  }
+
+})
+
+app.post('/profile', async (req, res) => {
+
+  try {
+
+    const {
+      company_name,
+      contact_name,
+      phone,
+      email
+    } = req.body
+
+    const { data: users } = await supabase
+      .from('users')
+      .select('*')
+      .limit(1)
+
+    const user = users?.[0]
+
+    if(user){
+
+      await supabase
+        .from('users')
+        .update({
+          company_name,
+          contact_name,
+          phone,
+          email
+        })
+        .eq('id', user.id)
+
+    } else {
+
+      await supabase
+        .from('users')
+        .insert([
+          {
+            company_name,
+            contact_name,
+            phone,
+            email
+          }
+        ])
+
+    }
+
+    res.redirect('/profile')
+
+  } catch(error) {
+
+    res.status(500).send(error.message)
+
+  }
+
+})
+
