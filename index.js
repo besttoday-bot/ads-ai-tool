@@ -142,16 +142,24 @@ async function getAccessToken() {
 async function fetchGoogleAdsCampaigns90Days() {
   const accessToken = await getAccessToken()
 
+  const endDate = new Date()
+  const startDate = new Date()
+  startDate.setDate(endDate.getDate() - 90)
+
+  const formatDate = (date) => date.toISOString().slice(0, 10)
+
   const query = `
     SELECT
       segments.date,
       campaign.id,
       campaign.name,
+      campaign.status,
       metrics.impressions,
       metrics.clicks,
       metrics.ctr
     FROM campaign
-    WHERE segments.date BETWEEN '2026-02-22' AND '2026-05-22'
+    WHERE segments.date BETWEEN '${formatDate(startDate)}' AND '${formatDate(endDate)}'
+      AND campaign.status = 'ENABLED'
     ORDER BY segments.date DESC
   `
 
@@ -206,6 +214,7 @@ app.get('/sync-google-ads', async (req, res) => {
 
     const rows = results.map((item) => ({
       campaign_name: item.campaign.name,
+      campaign_status: item.campaign.status,
       clicks: Number(item.metrics.clicks || 0),
       impressions: Number(item.metrics.impressions || 0),
       ctr: Number(item.metrics.ctr || 0),
