@@ -2849,6 +2849,7 @@ app.post('/profile-settings', async (req, res) => {
       contact_name,
       phone,
       email,
+      target_score: Number(target_score || 90),
       openai_api_key,
       google_ads_customer_id,
       google_ads_login_customer_id,
@@ -3008,6 +3009,7 @@ app.post('/profile-settings-v2', async (req, res) => {
       contact_name,
       phone,
       email,
+      target_score: Number(target_score || 90),
       openai_api_key,
       google_ads_customer_id,
       google_ads_login_customer_id,
@@ -3181,6 +3183,7 @@ app.post('/profile-settings-v3', async (req, res) => {
       email,
       password,
       password_confirm,
+      target_score,
       openai_api_key,
       google_ads_customer_id,
       google_ads_login_customer_id,
@@ -3199,6 +3202,7 @@ app.post('/profile-settings-v3', async (req, res) => {
       contact_name,
       phone,
       email,
+      target_score: Number(target_score || 90),
       openai_api_key,
       google_ads_customer_id,
       google_ads_login_customer_id,
@@ -3291,6 +3295,12 @@ ${errorMessage ? `<div class="error">${errorMessage}</div>` : ''}
 <div class="field">
 <label>メールアドレス</label>
 <input name="email" type="email" value="${user.email || ''}">
+</div>
+
+<div class="field">
+<label>AI診断スコア目標</label>
+<input name="target_score" type="number" min="0" max="100" value="${user.target_score || 90}">
+<p class="help">0〜100点で設定してください。おすすめは90点です。</p>
 </div>
 </div>
 
@@ -3398,6 +3408,7 @@ app.post('/profile-settings-v4', async (req, res) => {
       email,
       password,
       password_confirm,
+      target_score,
       openai_api_key,
       google_ads_customer_id,
       google_ads_login_customer_id,
@@ -3416,6 +3427,7 @@ app.post('/profile-settings-v4', async (req, res) => {
       contact_name,
       phone,
       email,
+      target_score: Number(target_score || 90),
       openai_api_key,
       google_ads_customer_id,
       google_ads_login_customer_id,
