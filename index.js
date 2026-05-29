@@ -3725,6 +3725,14 @@ app.get('/main-dashboard-v3', async (req, res) => {
 
     if (error) throw error
 
+    const { data: recommendations } = await supabase
+      .from('ai_recommendations')
+      .select('*')
+      .order('created_at', { ascending:false })
+      .limit(1)
+
+    const latestRecommendation = recommendations?.[0]
+
     const grouped = {}
 
     campaigns.forEach(r => {
@@ -3811,6 +3819,24 @@ button,.reset-btn{padding:11px 20px;border:none;border-radius:8px;background:#11
 <div class="container">
 
 <h1>AI広告ダッシュボード v3</h1>
+
+<div class="card">
+<h2>🤖 最新AI改善提案</h2>
+
+${latestRecommendation ? `
+  <div style="border-left:6px solid #dc2626;padding-left:16px;">
+    <p><strong>重要度：</strong>${latestRecommendation.priority || '中'}</p>
+    <pre style="white-space:pre-wrap;line-height:1.7;font-size:15px;">${latestRecommendation.recommendation}</pre>
+    <p style="color:#666;font-size:13px;">生成日時：${latestRecommendation.created_at}</p>
+  </div>
+` : `
+  <p>まだAI改善提案はありません。</p>
+`}
+
+<p>
+  <a class="reset-btn" href="/generate-ai-recommendation">AI改善提案を再生成</a>
+</p>
+</div>
 
 <div class="card">
 <h2>検索条件</h2>
@@ -3969,6 +3995,14 @@ app.get('/main-dashboard-v3', async (req, res) => {
 
     if (error) throw error
 
+    const { data: recommendations } = await supabase
+      .from('ai_recommendations')
+      .select('*')
+      .order('created_at', { ascending:false })
+      .limit(1)
+
+    const latestRecommendation = recommendations?.[0]
+
     const grouped = {}
 
     campaigns.forEach(r => {
@@ -4055,6 +4089,24 @@ button,.reset-btn{padding:11px 20px;border:none;border-radius:8px;background:#11
 <div class="container">
 
 <h1>AI広告ダッシュボード v3</h1>
+
+<div class="card">
+<h2>🤖 最新AI改善提案</h2>
+
+${latestRecommendation ? `
+  <div style="border-left:6px solid #dc2626;padding-left:16px;">
+    <p><strong>重要度：</strong>${latestRecommendation.priority || '中'}</p>
+    <pre style="white-space:pre-wrap;line-height:1.7;font-size:15px;">${latestRecommendation.recommendation}</pre>
+    <p style="color:#666;font-size:13px;">生成日時：${latestRecommendation.created_at}</p>
+  </div>
+` : `
+  <p>まだAI改善提案はありません。</p>
+`}
+
+<p>
+  <a class="reset-btn" href="/generate-ai-recommendation">AI改善提案を再生成</a>
+</p>
+</div>
 
 <div class="card">
 <h2>検索条件</h2>
@@ -4213,6 +4265,14 @@ app.get('/main-dashboard-v3', async (req, res) => {
 
     if (error) throw error
 
+    const { data: recommendations } = await supabase
+      .from('ai_recommendations')
+      .select('*')
+      .order('created_at', { ascending:false })
+      .limit(1)
+
+    const latestRecommendation = recommendations?.[0]
+
     const grouped = {}
 
     campaigns.forEach(r => {
@@ -4299,6 +4359,24 @@ button,.reset-btn{padding:11px 20px;border:none;border-radius:8px;background:#11
 <div class="container">
 
 <h1>AI広告ダッシュボード v3</h1>
+
+<div class="card">
+<h2>🤖 最新AI改善提案</h2>
+
+${latestRecommendation ? `
+  <div style="border-left:6px solid #dc2626;padding-left:16px;">
+    <p><strong>重要度：</strong>${latestRecommendation.priority || '中'}</p>
+    <pre style="white-space:pre-wrap;line-height:1.7;font-size:15px;">${latestRecommendation.recommendation}</pre>
+    <p style="color:#666;font-size:13px;">生成日時：${latestRecommendation.created_at}</p>
+  </div>
+` : `
+  <p>まだAI改善提案はありません。</p>
+`}
+
+<p>
+  <a class="reset-btn" href="/generate-ai-recommendation">AI改善提案を再生成</a>
+</p>
+</div>
 
 <div class="card">
 <h2>検索条件</h2>
