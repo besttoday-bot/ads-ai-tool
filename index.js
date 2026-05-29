@@ -4429,3 +4429,106 @@ checks.forEach((id, index) => {
 
 })
 
+
+app.get('/generate-ai-recommendation', async (req, res) => {
+
+  try {
+
+    const { data: campaigns } = await supabase
+      .from('campaign_reports')
+      .select('*')
+      .order('report_date', { ascending:false })
+      .limit(30)
+
+    if (!campaigns || campaigns.length === 0) {
+      return res.send('キャンペーンデータがありません')
+    }
+
+    const clicks = campaigns.reduce((sum, r) =>
+      sum + Number(r.clicks || 0), 0)
+
+    const impressions = campaigns.reduce((sum, r) =>
+      sum + Number(r.impressions || 0), 0)
+
+    const conversions = campaigns.reduce((sum, r) =>
+      sum + Number(r.conversions || 0), 0)
+
+    const ctr = impressions
+      ? ((clicks / impressions) * 100).toFixed(2)
+      : 0
+
+    const prompt = `
+あなたはGoogle広告運用コンサルタントです。
+
+以下のデータを分析してください。
+
+クリック数: ${clicks}
+表示回数: ${impressions}
+CTR: ${ctr}%
+コンバージョン: ${conversions}
+
+次の形式で回答してください。
+
+重要度:
+分析:
+推奨アクション:
+`
+
+    const completion =
+      await openai.chat.completions.create({
+
+        model:'gpt-4.1-mini',
+
+        messages:[
+          {
+            role:'user',
+            content:prompt
+          }
+        ]
+
+      })
+
+    const recommendation =
+      completion.choices[0].message.content
+
+    let priority = '中'
+
+    if (
+      recommendation.includes('重要') ||
+      recommendation.includes('緊急')
+    ) {
+      priority = '高'
+    }
+
+    await supabase
+      .from('ai_recommendations')
+      .insert([
+        {
+          recommendation,
+          priority
+        }
+      ])
+
+    res.send(`
+      <h1>AI改善提案生成完了</h1>
+
+      <pre style="
+        white-space:pre-wrap;
+        font-size:16px;
+      ">${recommendation}</pre>
+
+      <p>
+        <a href="/main-dashboard-v3">
+          ダッシュボードへ戻る
+        </a>
+      </p>
+    `)
+
+  } catch(error) {
+
+    res.status(500).send(error.message)
+
+  }
+
+})
+
