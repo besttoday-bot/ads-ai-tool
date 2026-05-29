@@ -4636,12 +4636,26 @@ app.get('/main-dashboard-v4', async (req, res) => {
 
     const start = req.query.start || defaultStart
     const end = req.query.end || defaultEnd
+    const selectedCampaign = req.query.campaign || 'all'
 
-    const { data: campaigns, error } = await supabase
+    const { data: campaignOptionsRaw } = await supabase
+      .from('campaign_reports')
+      .select('campaign_name')
+      .order('campaign_name', { ascending: true })
+
+    const campaignOptions = [...new Set((campaignOptionsRaw || []).map(r => r.campaign_name))]
+
+    let campaignQuery = supabase
       .from('campaign_reports')
       .select('*')
       .gte('report_date', start)
       .lte('report_date', end)
+
+    if (selectedCampaign !== 'all') {
+      campaignQuery = campaignQuery.eq('campaign_name', selectedCampaign)
+    }
+
+    const { data: campaigns, error } = await campaignQuery
       .order('report_date', { ascending: true })
 
     if (error) throw error
@@ -4748,6 +4762,17 @@ pre{white-space:pre-wrap;line-height:1.7;}
 <label>終了日</label><br>
 <input type="date" name="end" value="${end}">
 </div>
+
+<div>
+<label>キャンペーン</label><br>
+<select name="campaign" style="padding:10px;border:1px solid #ddd;border-radius:8px;min-width:240px;">
+  <option value="all" ${selectedCampaign === 'all' ? 'selected' : ''}>全キャンペーン</option>
+  ${campaignOptions.map(name => `
+    <option value="${name}" ${selectedCampaign === name ? 'selected' : ''}>${name}</option>
+  `).join('')}
+</select>
+</div>
+
 <button type="submit">検索</button>
 <a class="reset-btn" href="/main-dashboard-v4">リセット</a>
 </form>
@@ -4762,6 +4787,11 @@ pre{white-space:pre-wrap;line-height:1.7;}
 <div class="kpi"><h3>広告費</h3><h2>¥${Number(totalCost).toLocaleString()}</h2></div>
 <div class="kpi"><h3>平均CPC</h3><h2>¥${Number(avgCpc).toLocaleString()}</h2></div>
 <div class="kpi"><h3>CPA</h3><h2>¥${Number(cpa).toLocaleString()}</h2></div>
+</div>
+
+<div class="card">
+<h2>表示対象</h2>
+<p><strong>キャンペーン：</strong>${selectedCampaign === 'all' ? '全キャンペーン' : selectedCampaign}</p>
 </div>
 
 <div class="card">
@@ -4854,12 +4884,26 @@ app.get('/main-dashboard-v5', async (req, res) => {
 
     const start = req.query.start || defaultStart
     const end = req.query.end || defaultEnd
+    const selectedCampaign = req.query.campaign || 'all'
 
-    const { data: campaigns, error } = await supabase
+    const { data: campaignOptionsRaw } = await supabase
+      .from('campaign_reports')
+      .select('campaign_name')
+      .order('campaign_name', { ascending: true })
+
+    const campaignOptions = [...new Set((campaignOptionsRaw || []).map(r => r.campaign_name))]
+
+    let campaignQuery = supabase
       .from('campaign_reports')
       .select('*')
       .gte('report_date', start)
       .lte('report_date', end)
+
+    if (selectedCampaign !== 'all') {
+      campaignQuery = campaignQuery.eq('campaign_name', selectedCampaign)
+    }
+
+    const { data: campaigns, error } = await campaignQuery
       .order('report_date', { ascending: true })
 
     if (error) throw error
@@ -4952,6 +4996,17 @@ pre{white-space:pre-wrap;line-height:1.7;}
 <label>終了日</label><br>
 <input type="date" name="end" value="${end}">
 </div>
+
+<div>
+<label>キャンペーン</label><br>
+<select name="campaign" style="padding:10px;border:1px solid #ddd;border-radius:8px;min-width:240px;">
+  <option value="all" ${selectedCampaign === 'all' ? 'selected' : ''}>全キャンペーン</option>
+  ${campaignOptions.map(name => `
+    <option value="${name}" ${selectedCampaign === name ? 'selected' : ''}>${name}</option>
+  `).join('')}
+</select>
+</div>
+
 <button type="submit">検索</button>
 <a class="reset-btn" href="/main-dashboard-v5">リセット</a>
 </form>
@@ -4966,6 +5021,11 @@ pre{white-space:pre-wrap;line-height:1.7;}
 <div class="kpi orange"><h3>広告費</h3><h2>¥${Number(totalCost).toLocaleString()}</h2></div>
 <div class="kpi black"><h3>平均CPC</h3><h2>¥${totalClicks ? Math.round(totalCost / totalClicks).toLocaleString() : 0}</h2></div>
 <div class="kpi black"><h3>CPA</h3><h2>¥${totalCv ? Math.round(totalCost / totalCv).toLocaleString() : 0}</h2></div>
+</div>
+
+<div class="card">
+<h2>表示対象</h2>
+<p><strong>キャンペーン：</strong>${selectedCampaign === 'all' ? '全キャンペーン' : selectedCampaign}</p>
 </div>
 
 <div class="card">
