@@ -4828,3 +4828,218 @@ const chart = new Chart(document.getElementById('chart'), {
   }
 })
 
+
+app.get('/main-dashboard-v5', async (req, res) => {
+  try {
+    const today = new Date()
+    const oneMonthAgo = new Date()
+    oneMonthAgo.setMonth(today.getMonth() - 1)
+
+    const defaultEnd = today.toISOString().slice(0, 10)
+    const defaultStart = oneMonthAgo.toISOString().slice(0, 10)
+
+    const start = req.query.start || defaultStart
+    const end = req.query.end || defaultEnd
+
+    const { data: campaigns, error } = await supabase
+      .from('campaign_reports')
+      .select('*')
+      .gte('report_date', start)
+      .lte('report_date', end)
+      .order('report_date', { ascending: true })
+
+    if (error) throw error
+
+    const { data: recommendations } = await supabase
+      .from('ai_recommendations')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    const latestRecommendation = recommendations?.[0]
+
+    const grouped = {}
+
+    ;(campaigns || []).forEach(r => {
+      const date = r.report_date
+      if (!grouped[date]) grouped[date] = { clicks: 0, impressions: 0, cost: 0, conversions: 0 }
+
+      grouped[date].clicks += Number(r.clicks || 0)
+      grouped[date].impressions += Number(r.impressions || 0)
+      grouped[date].cost += Number(r.cost || 0)
+      grouped[date].conversions += Number(r.conversions || 0)
+    })
+
+    const labels = Object.keys(grouped)
+
+    const clicksData = labels.map(d => grouped[d].clicks)
+    const impressionsData = labels.map(d => grouped[d].impressions)
+    const ctrData = labels.map(d => grouped[d].impressions ? (grouped[d].clicks / grouped[d].impressions) * 100 : 0)
+    const cvData = labels.map(d => grouped[d].conversions)
+    const cpcData = labels.map(d => grouped[d].clicks ? grouped[d].cost / grouped[d].clicks : 0)
+
+    const totalClicks = clicksData.reduce((a,b)=>a+b,0)
+    const totalImpressions = impressionsData.reduce((a,b)=>a+b,0)
+    const totalCost = labels.reduce((sum,d)=>sum + grouped[d].cost,0)
+    const totalCv = cvData.reduce((a,b)=>a+b,0)
+    const avgCtr = totalImpressions ? ((totalClicks / totalImpressions) * 100).toFixed(2) : 0
+
+    let healthScore = 0
+    if (avgCtr >= 5) healthScore += 40
+    else if (avgCtr >= 3) healthScore += 30
+    else if (avgCtr >= 2) healthScore += 20
+    else healthScore += 10
+
+    healthScore += totalCv > 0 ? 40 : 10
+    healthScore += totalClicks >= 100 ? 20 : totalClicks >= 50 ? 15 : 5
+
+    const healthLabel = healthScore >= 80 ? '良好' : healthScore >= 60 ? '改善余地あり' : '要改善'
+
+    res.send(`
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AI広告統合ダッシュボード v5</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body{font-family:sans-serif;background:#f5f5f5;padding:32px;}
+.container{max-width:1200px;margin:auto;}
+.card{background:white;border-radius:20px;padding:24px;margin-bottom:24px;box-shadow:0 4px 20px rgba(0,0,0,.05);}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.kpi{color:white;border-radius:16px;padding:20px;}
+.kpi h3{margin:0 0 8px;font-size:14px;}
+.kpi h2{margin:0;font-size:28px;}
+.green{background:#16a34a}.blue{background:#2563eb}.purple{background:#7e22ce}.cyan{background:#0891b2}
+.red{background:#dc2626}.orange{background:#f97316}.black{background:#111}
+form{display:flex;gap:16px;align-items:end;flex-wrap:wrap;}
+input{padding:10px;border:1px solid #ddd;border-radius:8px;}
+button,.reset-btn{padding:11px 20px;border-radius:8px;border:0;text-decoration:none;display:inline-block;}
+button{background:#111;color:white;}
+.reset-btn{background:#9ca3af;color:white;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+.chart-box{height:360px;}
+pre{white-space:pre-wrap;line-height:1.7;}
+.summary{font-size:16px;line-height:1.8;}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>AI広告統合ダッシュボード v5</h1>
+
+<div class="card">
+<h2>検索条件</h2>
+<form method="GET" action="/main-dashboard-v5">
+<div>
+<label>開始日</label><br>
+<input type="date" name="start" value="${start}">
+</div>
+<div>
+<label>終了日</label><br>
+<input type="date" name="end" value="${end}">
+</div>
+<button type="submit">検索</button>
+<a class="reset-btn" href="/main-dashboard-v5">リセット</a>
+</form>
+</div>
+
+<div class="kpis">
+<div class="kpi green"><h3>広告健康度</h3><h2>${healthScore}点</h2><p>${healthLabel}</p></div>
+<div class="kpi blue"><h3>総クリック</h3><h2>${totalClicks.toLocaleString()}</h2></div>
+<div class="kpi purple"><h3>総表示回数</h3><h2>${totalImpressions.toLocaleString()}</h2></div>
+<div class="kpi cyan"><h3>平均CTR</h3><h2>${avgCtr}%</h2></div>
+<div class="kpi red"><h3>総CV</h3><h2>${totalCv.toLocaleString()}</h2></div>
+<div class="kpi orange"><h3>広告費</h3><h2>¥${Number(totalCost).toLocaleString()}</h2></div>
+<div class="kpi black"><h3>平均CPC</h3><h2>¥${totalClicks ? Math.round(totalCost / totalClicks).toLocaleString() : 0}</h2></div>
+<div class="kpi black"><h3>CPA</h3><h2>¥${totalCv ? Math.round(totalCost / totalCv).toLocaleString() : 0}</h2></div>
+</div>
+
+<div class="card">
+<h2>🤖 AI要約</h2>
+<div class="summary">
+<p><strong>広告健康度：</strong>${healthScore}点（${healthLabel}）</p>
+<p><strong>重要な問題：</strong>${totalCv === 0 ? 'CVが0件です。クリック後の導線または計測設定の確認が必要です。' : 'CVは発生しています。CPAとCV数の推移を確認してください。'}</p>
+<p><strong>推奨アクション：</strong>コンバージョン計測、LP、検索語句の順に確認してください。</p>
+</div>
+
+<details>
+<summary>詳細AIレポートを見る</summary>
+<pre>${latestRecommendation?.recommendation || 'まだAI改善提案はありません。'}</pre>
+</details>
+
+<p><a class="reset-btn" href="/generate-ai-recommendation">AI改善提案を再生成</a></p>
+</div>
+
+<div class="grid">
+<div class="card">
+<h2>集客推移</h2>
+<p>広告がどれだけ表示され、クリックされたかを確認します。</p>
+<div class="chart-box"><canvas id="trafficChart"></canvas></div>
+</div>
+
+<div class="card">
+<h2>CTR推移</h2>
+<p>広告がどれだけクリックされやすいかを確認します。</p>
+<div class="chart-box"><canvas id="ctrChart"></canvas></div>
+</div>
+
+<div class="card">
+<h2>CV推移</h2>
+<p>問い合わせ・成果が発生しているかを確認します。</p>
+<div class="chart-box"><canvas id="cvChart"></canvas></div>
+</div>
+
+<div class="card">
+<h2>CPC推移</h2>
+<p>1クリックあたりの費用を確認します。</p>
+<div class="chart-box"><canvas id="cpcChart"></canvas></div>
+</div>
+</div>
+
+</div>
+
+<script>
+const labels = ${JSON.stringify(labels)}
+
+function makeChart(id, datasets){
+  return new Chart(document.getElementById(id), {
+    type:'line',
+    data:{labels,datasets},
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      scales:{
+        x:{ticks:{maxRotation:90,minRotation:90}},
+        y:{beginAtZero:true}
+      }
+    }
+  })
+}
+
+makeChart('trafficChart', [
+  {label:'表示回数', data:${JSON.stringify(impressionsData)}, borderColor:'#9333ea', backgroundColor:'#9333ea'},
+  {label:'クリック数', data:${JSON.stringify(clicksData)}, borderColor:'#16a34a', backgroundColor:'#16a34a'}
+])
+
+makeChart('ctrChart', [
+  {label:'CTR (%)', data:${JSON.stringify(ctrData)}, borderColor:'#2563eb', backgroundColor:'#2563eb'}
+])
+
+makeChart('cvChart', [
+  {label:'CV', data:${JSON.stringify(cvData)}, borderColor:'#dc2626', backgroundColor:'#dc2626'}
+])
+
+makeChart('cpcChart', [
+  {label:'CPC', data:${JSON.stringify(cpcData)}, borderColor:'#f97316', backgroundColor:'#f97316'}
+])
+</script>
+
+</body>
+</html>
+    `)
+  } catch(error) {
+    res.status(500).send(error.message)
+  }
+})
+
