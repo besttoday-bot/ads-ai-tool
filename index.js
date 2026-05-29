@@ -3296,12 +3296,6 @@ ${errorMessage ? `<div class="error">${errorMessage}</div>` : ''}
 <label>メールアドレス</label>
 <input name="email" type="email" value="${user.email || ''}">
 </div>
-
-<div class="field">
-<label>AI診断スコア目標</label>
-<input name="target_score" type="number" min="0" max="100" value="${user.target_score || 90}">
-<p class="help">0〜100点で設定してください。おすすめは90点です。</p>
-</div>
 </div>
 
 <div class="card">
@@ -3759,6 +3753,13 @@ app.get('/main-dashboard-v3', async (req, res) => {
 
     const latestRecommendation = recommendations?.[0]
 
+    const { data: usersForScore } = await supabase
+      .from('users')
+      .select('target_score')
+      .limit(1)
+
+    const targetScore = usersForScore?.[0]?.target_score || 90
+
     const grouped = {}
 
     campaigns.forEach(r => {
@@ -3881,6 +3882,18 @@ ${latestRecommendation ? `
 <button class="search-btn" type="submit">検索</button>
 <a class="reset-btn" href="/main-dashboard-v3">リセット</a>
 </form>
+</div>
+
+<div class="card">
+<h2>AI診断スコア目標</h2>
+<form method="POST" action="/dashboard-target-score">
+<div>
+<label>目標点数</label><br>
+<input type="number" name="target_score" min="0" max="100" value="${targetScore}">
+</div>
+<button type="submit">保存</button>
+</form>
+<p>現在 ${healthScore}点 / 目標 ${targetScore}点 / あと ${shortageScore}点</p>
 </div>
 
 <div class="kpis">
@@ -4029,6 +4042,13 @@ app.get('/main-dashboard-v3', async (req, res) => {
 
     const latestRecommendation = recommendations?.[0]
 
+    const { data: usersForScore } = await supabase
+      .from('users')
+      .select('target_score')
+      .limit(1)
+
+    const targetScore = usersForScore?.[0]?.target_score || 90
+
     const grouped = {}
 
     campaigns.forEach(r => {
@@ -4151,6 +4171,18 @@ ${latestRecommendation ? `
 <button class="search-btn" type="submit">検索</button>
 <a class="reset-btn" href="/main-dashboard-v3">リセット</a>
 </form>
+</div>
+
+<div class="card">
+<h2>AI診断スコア目標</h2>
+<form method="POST" action="/dashboard-target-score">
+<div>
+<label>目標点数</label><br>
+<input type="number" name="target_score" min="0" max="100" value="${targetScore}">
+</div>
+<button type="submit">保存</button>
+</form>
+<p>現在 ${healthScore}点 / 目標 ${targetScore}点 / あと ${shortageScore}点</p>
 </div>
 
 <div class="kpis">
@@ -4299,6 +4331,13 @@ app.get('/main-dashboard-v3', async (req, res) => {
 
     const latestRecommendation = recommendations?.[0]
 
+    const { data: usersForScore } = await supabase
+      .from('users')
+      .select('target_score')
+      .limit(1)
+
+    const targetScore = usersForScore?.[0]?.target_score || 90
+
     const grouped = {}
 
     campaigns.forEach(r => {
@@ -4421,6 +4460,18 @@ ${latestRecommendation ? `
 <button class="search-btn" type="submit">検索</button>
 <a class="reset-btn" href="/main-dashboard-v3">リセット</a>
 </form>
+</div>
+
+<div class="card">
+<h2>AI診断スコア目標</h2>
+<form method="POST" action="/dashboard-target-score">
+<div>
+<label>目標点数</label><br>
+<input type="number" name="target_score" min="0" max="100" value="${targetScore}">
+</div>
+<button type="submit">保存</button>
+</form>
+<p>現在 ${healthScore}点 / 目標 ${targetScore}点 / あと ${shortageScore}点</p>
 </div>
 
 <div class="kpis">
@@ -4680,6 +4731,13 @@ app.get('/main-dashboard-v4', async (req, res) => {
 
     const latestRecommendation = recommendations?.[0]
 
+    const { data: usersForScore } = await supabase
+      .from('users')
+      .select('target_score')
+      .limit(1)
+
+    const targetScore = usersForScore?.[0]?.target_score || 90
+
     const grouped = {}
 
     ;(campaigns || []).forEach(r => {
@@ -4788,6 +4846,18 @@ pre{white-space:pre-wrap;line-height:1.7;}
 <button type="submit">検索</button>
 <a class="reset-btn" href="/main-dashboard-v4">リセット</a>
 </form>
+</div>
+
+<div class="card">
+<h2>AI診断スコア目標</h2>
+<form method="POST" action="/dashboard-target-score">
+<div>
+<label>目標点数</label><br>
+<input type="number" name="target_score" min="0" max="100" value="${targetScore}">
+</div>
+<button type="submit">保存</button>
+</form>
+<p>現在 ${healthScore}点 / 目標 ${targetScore}点 / あと ${shortageScore}点</p>
 </div>
 
 <div class="kpis">
@@ -4928,6 +4998,13 @@ app.get('/main-dashboard-v5', async (req, res) => {
 
     const latestRecommendation = recommendations?.[0]
 
+    const { data: usersForScore } = await supabase
+      .from('users')
+      .select('target_score')
+      .limit(1)
+
+    const targetScore = usersForScore?.[0]?.target_score || 90
+
     const grouped = {}
 
     ;(campaigns || []).forEach(r => {
@@ -4964,6 +5041,8 @@ app.get('/main-dashboard-v5', async (req, res) => {
     healthScore += totalClicks >= 100 ? 20 : totalClicks >= 50 ? 15 : 5
 
     const healthLabel = healthScore >= 80 ? '良好' : healthScore >= 60 ? '改善余地あり' : '要改善'
+    const achievementRate = targetScore ? Math.min(100, Math.round((healthScore / targetScore) * 100)) : 0
+    const shortageScore = Math.max(0, targetScore - healthScore)
 
     res.send(`
 <html>
@@ -5024,8 +5103,25 @@ pre{white-space:pre-wrap;line-height:1.7;}
 </form>
 </div>
 
+<div class="card">
+<h2>AI診断スコア目標</h2>
+<form method="POST" action="/dashboard-target-score">
+<div>
+<label>目標点数</label><br>
+<input type="number" name="target_score" min="0" max="100" value="${targetScore}">
+</div>
+<button type="submit">保存</button>
+</form>
+<p>現在 ${healthScore}点 / 目標 ${targetScore}点 / あと ${shortageScore}点</p>
+</div>
+
 <div class="kpis">
-<div class="kpi green"><h3>広告健康度</h3><h2>${healthScore}点</h2><p>${healthLabel}</p></div>
+<div class="kpi green">
+<h3>AI診断スコア</h3>
+<h2>${healthScore}点</h2>
+<p>目標 ${targetScore}点 / 達成率 ${achievementRate}%</p>
+<p>${healthLabel}</p>
+</div>
 <div class="kpi blue"><h3>総クリック</h3><h2>${totalClicks.toLocaleString()}</h2></div>
 <div class="kpi purple"><h3>総表示回数</h3><h2>${totalImpressions.toLocaleString()}</h2></div>
 <div class="kpi cyan"><h3>平均CTR</h3><h2>${avgCtr}%</h2></div>
@@ -5043,7 +5139,8 @@ pre{white-space:pre-wrap;line-height:1.7;}
 <div class="card">
 <h2>🤖 AI要約</h2>
 <div class="summary">
-<p><strong>広告健康度：</strong>${healthScore}点（${healthLabel}）</p>
+<p><strong>AI診断スコア：</strong>${healthScore}点（${healthLabel}）</p>
+<p><strong>目標：</strong>${targetScore}点 / 達成率 ${achievementRate}% / あと ${shortageScore}点</p>
 <p><strong>重要な問題：</strong>${totalCv === 0 ? 'CVが0件です。クリック後の導線または計測設定の確認が必要です。' : 'CVは発生しています。CPAとCV数の推移を確認してください。'}</p>
 <p><strong>推奨アクション：</strong>コンバージョン計測、LP、検索語句の順に確認してください。</p>
 </div>
@@ -5125,6 +5222,35 @@ makeChart('cpcChart', [
 </html>
     `)
   } catch(error) {
+    res.status(500).send(error.message)
+  }
+})
+
+
+app.post('/dashboard-target-score', async (req, res) => {
+  try {
+    const targetScore = Number(req.body.target_score || 90)
+
+    const { data: users } = await supabase
+      .from('users')
+      .select('*')
+      .limit(1)
+
+    const user = users?.[0]
+
+    if (user) {
+      await supabase
+        .from('users')
+        .update({ target_score: targetScore })
+        .eq('id', user.id)
+    } else {
+      await supabase
+        .from('users')
+        .insert([{ target_score: targetScore }])
+    }
+
+    res.redirect('/main-dashboard-v5')
+  } catch (error) {
     res.status(500).send(error.message)
   }
 })
