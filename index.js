@@ -214,6 +214,11 @@ app.get('/sync-google-ads', async (req, res) => {
       report_date: item.segments.date
     }))
 
+    await supabase
+      .from('campaign_reports')
+      .delete()
+      .neq('id', 0)
+
     const { data, error } = await supabase
       .from('campaign_reports')
       .insert(rows)
