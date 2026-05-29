@@ -4610,3 +4610,221 @@ CTR: ${ctr}%
 
 })
 
+
+app.get('/main-dashboard-v4', async (req, res) => {
+  try {
+    const today = new Date()
+    const oneMonthAgo = new Date()
+    oneMonthAgo.setMonth(today.getMonth() - 1)
+
+    const defaultEnd = today.toISOString().slice(0, 10)
+    const defaultStart = oneMonthAgo.toISOString().slice(0, 10)
+
+    const start = req.query.start || defaultStart
+    const end = req.query.end || defaultEnd
+
+    const { data: campaigns, error } = await supabase
+      .from('campaign_reports')
+      .select('*')
+      .gte('report_date', start)
+      .lte('report_date', end)
+      .order('report_date', { ascending: true })
+
+    if (error) throw error
+
+    const { data: recommendations } = await supabase
+      .from('ai_recommendations')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    const latestRecommendation = recommendations?.[0]
+
+    const grouped = {}
+
+    ;(campaigns || []).forEach(r => {
+      const date = r.report_date
+      if (!grouped[date]) {
+        grouped[date] = { clicks: 0, impressions: 0, cost: 0, conversions: 0 }
+      }
+
+      grouped[date].clicks += Number(r.clicks || 0)
+      grouped[date].impressions += Number(r.impressions || 0)
+      grouped[date].cost += Number(r.cost || 0)
+      grouped[date].conversions += Number(r.conversions || 0)
+    })
+
+    const labels = Object.keys(grouped)
+
+    const clicksData = labels.map(d => grouped[d].clicks)
+    const impressionsData = labels.map(d => grouped[d].impressions)
+    const ctrData = labels.map(d =>
+      grouped[d].impressions ? (grouped[d].clicks / grouped[d].impressions) * 100 : 0
+    )
+    const costData = labels.map(d => grouped[d].cost)
+    const cvData = labels.map(d => grouped[d].conversions)
+    const cpcData = labels.map(d =>
+      grouped[d].clicks ? grouped[d].cost / grouped[d].clicks : 0
+    )
+
+    const totalClicks = clicksData.reduce((a,b)=>a+b,0)
+    const totalImpressions = impressionsData.reduce((a,b)=>a+b,0)
+    const totalCost = costData.reduce((a,b)=>a+b,0)
+    const totalCv = cvData.reduce((a,b)=>a+b,0)
+
+    const avgCtr = totalImpressions ? ((totalClicks / totalImpressions) * 100).toFixed(2) : 0
+    const avgCpc = totalClicks ? (totalCost / totalClicks).toFixed(0) : 0
+    const cpa = totalCv ? (totalCost / totalCv).toFixed(0) : 0
+
+    let healthScore = 0
+
+    if (avgCtr >= 5) healthScore += 40
+    else if (avgCtr >= 3) healthScore += 30
+    else if (avgCtr >= 2) healthScore += 20
+    else healthScore += 10
+
+    if (totalCv > 0) healthScore += 40
+    else healthScore += 10
+
+    if (totalClicks >= 100) healthScore += 20
+    else if (totalClicks >= 50) healthScore += 15
+    else healthScore += 5
+
+    const healthLabel =
+      healthScore >= 80 ? '良好' :
+      healthScore >= 60 ? '改善余地あり' :
+      '要改善'
+
+    res.send(`
+<html>
+<head>
+<meta charset="UTF-8">
+<title>AI広告統合ダッシュボード v4</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body{font-family:sans-serif;background:#f5f5f5;padding:32px;}
+.container{max-width:1200px;margin:auto;}
+.card{background:white;border-radius:20px;padding:24px;margin-bottom:24px;box-shadow:0 4px 20px rgba(0,0,0,.05);}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.kpi{background:#111;color:white;border-radius:16px;padding:20px;}
+.kpi h3{margin:0 0 8px;font-size:14px;}
+.kpi h2{margin:0;font-size:28px;}
+form{display:flex;gap:16px;align-items:end;flex-wrap:wrap;}
+input{padding:10px;border:1px solid #ddd;border-radius:8px;}
+button,.reset-btn{padding:11px 20px;border-radius:8px;border:0;text-decoration:none;display:inline-block;}
+button{background:#111;color:white;}
+.reset-btn{background:#9ca3af;color:white;}
+.controls{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;}
+pre{white-space:pre-wrap;line-height:1.7;}
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>AI広告統合ダッシュボード v4</h1>
+
+<div class="card">
+<h2>検索条件</h2>
+<form method="GET" action="/main-dashboard-v4">
+<div>
+<label>開始日</label><br>
+<input type="date" name="start" value="${start}">
+</div>
+<div>
+<label>終了日</label><br>
+<input type="date" name="end" value="${end}">
+</div>
+<button type="submit">検索</button>
+<a class="reset-btn" href="/main-dashboard-v4">リセット</a>
+</form>
+</div>
+
+<div class="kpis">
+<div class="kpi"><h3>広告健康度</h3><h2>${healthScore}点</h2><p>${healthLabel}</p></div>
+<div class="kpi"><h3>総クリック</h3><h2>${totalClicks.toLocaleString()}</h2></div>
+<div class="kpi"><h3>総表示回数</h3><h2>${totalImpressions.toLocaleString()}</h2></div>
+<div class="kpi"><h3>平均CTR</h3><h2>${avgCtr}%</h2></div>
+<div class="kpi"><h3>総CV</h3><h2>${totalCv.toLocaleString()}</h2></div>
+<div class="kpi"><h3>広告費</h3><h2>¥${Number(totalCost).toLocaleString()}</h2></div>
+<div class="kpi"><h3>平均CPC</h3><h2>¥${Number(avgCpc).toLocaleString()}</h2></div>
+<div class="kpi"><h3>CPA</h3><h2>¥${Number(cpa).toLocaleString()}</h2></div>
+</div>
+
+<div class="card">
+<h2>🤖 AI要約</h2>
+${latestRecommendation ? `
+<p><strong>重要度：</strong>${latestRecommendation.priority || '中'}</p>
+<pre>${latestRecommendation.recommendation}</pre>
+<p><a class="reset-btn" href="/generate-ai-recommendation">AI改善提案を再生成</a></p>
+` : `
+<p>まだAI改善提案はありません。</p>
+<p><a class="reset-btn" href="/generate-ai-recommendation">AI改善提案を生成</a></p>
+`}
+</div>
+
+<div class="card">
+<h2>推移グラフ</h2>
+
+<div class="controls">
+<label><input type="checkbox" checked id="ctrCheck"> CTR</label>
+<label><input type="checkbox" checked id="clicksCheck"> クリック</label>
+<label><input type="checkbox" checked id="impressionsCheck"> 表示回数</label>
+<label><input type="checkbox" checked id="cpcCheck"> CPC</label>
+<label><input type="checkbox" checked id="cvCheck"> CV</label>
+</div>
+
+<div style="height:520px;">
+<canvas id="chart"></canvas>
+</div>
+</div>
+
+</div>
+
+<script>
+const labels = ${JSON.stringify(labels)}
+
+const chart = new Chart(document.getElementById('chart'), {
+  type: 'line',
+  data: {
+    labels,
+    datasets: [
+      { label:'CTR (%)', data:${JSON.stringify(ctrData)}, borderColor:'#2563eb', backgroundColor:'#2563eb' },
+      { label:'クリック', data:${JSON.stringify(clicksData)}, borderColor:'#16a34a', backgroundColor:'#16a34a' },
+      { label:'表示回数', data:${JSON.stringify(impressionsData)}, borderColor:'#9333ea', backgroundColor:'#9333ea' },
+      { label:'CPC', data:${JSON.stringify(cpcData)}, borderColor:'#f97316', backgroundColor:'#f97316' },
+      { label:'CV', data:${JSON.stringify(cvData)}, borderColor:'#dc2626', backgroundColor:'#dc2626' }
+    ]
+  },
+  options: {
+    responsive:true,
+    maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    scales:{
+      x:{ticks:{maxRotation:90,minRotation:90}},
+      y:{beginAtZero:true}
+    }
+  }
+})
+
+;[
+  ['ctrCheck',0],
+  ['clicksCheck',1],
+  ['impressionsCheck',2],
+  ['cpcCheck',3],
+  ['cvCheck',4]
+].forEach(([id,index])=>{
+  document.getElementById(id).addEventListener('change', e=>{
+    chart.data.datasets[index].hidden = !e.target.checked
+    chart.update()
+  })
+})
+</script>
+
+</body>
+</html>
+    `)
+  } catch(error) {
+    res.status(500).send(error.message)
+  }
+})
+
