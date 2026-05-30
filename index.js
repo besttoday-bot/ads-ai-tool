@@ -5039,8 +5039,19 @@ app.get('/main-dashboard-v5', async (req, res) => {
     else if (avgCtr >= 2) healthScore += 20
     else healthScore += 10
 
-    healthScore += totalCv > 0 ? 40 : 10
-    healthScore += totalClicks >= 100 ? 20 : totalClicks >= 50 ? 15 : 5
+    const cpaValue = totalCv > 0 ? totalCost / totalCv : 0
+
+    if (totalCv >= 10) healthScore += 30
+    else if (totalCv >= 3) healthScore += 25
+    else if (totalCv >= 1) healthScore += 20
+    else healthScore += 5
+
+    if (cpaValue > 0 && cpaValue <= 30000) healthScore += 20
+    else if (cpaValue > 0 && cpaValue <= 70000) healthScore += 15
+    else if (cpaValue > 0) healthScore += 5
+    else healthScore += 0
+
+    healthScore += totalClicks >= 100 ? 10 : totalClicks >= 50 ? 5 : 0
 
     const healthLabel = healthScore >= 80 ? '良好' : healthScore >= 60 ? '改善余地あり' : '要改善'
     const achievementRate = targetScore ? Math.min(100, Math.round((healthScore / targetScore) * 100)) : 0
@@ -5128,10 +5139,10 @@ pre{white-space:pre-wrap;line-height:1.7;}
 <div class="kpi purple"><h3>総表示回数</h3><h2>${totalImpressions.toLocaleString()}</h2></div>
 <div class="kpi cyan"><h3>平均CTR</h3><h2>${avgCtr}%</h2></div>
 
-<div class="kpi red"><h3>総CV</h3><h2>${totalCv > 0 ? totalCv.toLocaleString() : '取得準備中'}</h2></div>
-<div class="kpi orange"><h3>広告費</h3><h2>${totalCost > 0 ? '¥' + Number(totalCost).toLocaleString() : '取得準備中'}</h2></div>
-<div class="kpi black"><h3>平均CPC</h3><h2>${totalCost > 0 && totalClicks > 0 ? '¥' + Math.round(totalCost / totalClicks).toLocaleString() : '取得準備中'}</h2></div>
-<div class="kpi black"><h3>CPA</h3><h2>${totalCost > 0 && totalCv > 0 ? '¥' + Math.round(totalCost / totalCv).toLocaleString() : '取得準備中'}</h2></div>
+<div class="kpi red"><h3>総CV</h3><h2>${totalCv.toLocaleString()}件</h2></div>
+<div class="kpi orange"><h3>広告費</h3><h2>¥${Math.round(totalCost).toLocaleString()}</h2></div>
+<div class="kpi black"><h3>平均CPC</h3><h2>¥${totalClicks ? Math.round(totalCost / totalClicks).toLocaleString() : 0}</h2></div>
+<div class="kpi black"><h3>CPA</h3><h2>¥${totalCv ? Math.round(totalCost / totalCv).toLocaleString() : 0}</h2></div>
 
 <div class="kpi green"><h3>目標スコア</h3><h2>${targetScore}点</h2></div>
 <div class="kpi blue"><h3>達成率</h3><h2>${achievementRate}%</h2><p>あと ${shortageScore}点</p></div>
