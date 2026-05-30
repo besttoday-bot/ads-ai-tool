@@ -5043,6 +5043,11 @@ app.get('/main-dashboard-v5', async (req, res) => {
     const healthLabel = healthScore >= 80 ? '良好' : healthScore >= 60 ? '改善余地あり' : '要改善'
     const achievementRate = targetScore ? Math.min(100, Math.round((healthScore / targetScore) * 100)) : 0
     const shortageScore = Math.max(0, targetScore - healthScore)
+    const activeCampaignCount = campaignOptions.length
+    const { data: recommendationCountData } = await supabase
+      .from('ai_recommendations')
+      .select('id')
+    const recommendationCount = recommendationCountData?.length || 0
 
     res.send(`
 <html>
@@ -5116,19 +5121,20 @@ pre{white-space:pre-wrap;line-height:1.7;}
 </div>
 
 <div class="kpis">
-<div class="kpi green">
-<h3>AI診断スコア</h3>
-<h2>${healthScore}点</h2>
-<p>目標 ${targetScore}点 / 達成率 ${achievementRate}%</p>
-<p>${healthLabel}</p>
-</div>
+<div class="kpi green"><h3>AI診断スコア</h3><h2>${healthScore}点</h2><p>${healthLabel}</p></div>
 <div class="kpi blue"><h3>総クリック</h3><h2>${totalClicks.toLocaleString()}</h2></div>
 <div class="kpi purple"><h3>総表示回数</h3><h2>${totalImpressions.toLocaleString()}</h2></div>
 <div class="kpi cyan"><h3>平均CTR</h3><h2>${avgCtr}%</h2></div>
-<div class="kpi red"><h3>総CV</h3><h2>${totalCv.toLocaleString()}</h2></div>
-<div class="kpi orange"><h3>広告費</h3><h2>¥${Number(totalCost).toLocaleString()}</h2></div>
-<div class="kpi black"><h3>平均CPC</h3><h2>¥${totalClicks ? Math.round(totalCost / totalClicks).toLocaleString() : 0}</h2></div>
-<div class="kpi black"><h3>CPA</h3><h2>¥${totalCv ? Math.round(totalCost / totalCv).toLocaleString() : 0}</h2></div>
+
+<div class="kpi red"><h3>総CV</h3><h2>${totalCv > 0 ? totalCv.toLocaleString() : '取得準備中'}</h2></div>
+<div class="kpi orange"><h3>広告費</h3><h2>${totalCost > 0 ? '¥' + Number(totalCost).toLocaleString() : '取得準備中'}</h2></div>
+<div class="kpi black"><h3>平均CPC</h3><h2>${totalCost > 0 && totalClicks > 0 ? '¥' + Math.round(totalCost / totalClicks).toLocaleString() : '取得準備中'}</h2></div>
+<div class="kpi black"><h3>CPA</h3><h2>${totalCost > 0 && totalCv > 0 ? '¥' + Math.round(totalCost / totalCv).toLocaleString() : '取得準備中'}</h2></div>
+
+<div class="kpi green"><h3>目標スコア</h3><h2>${targetScore}点</h2></div>
+<div class="kpi blue"><h3>達成率</h3><h2>${achievementRate}%</h2><p>あと ${shortageScore}点</p></div>
+<div class="kpi purple"><h3>有効キャンペーン数</h3><h2>${activeCampaignCount}件</h2></div>
+<div class="kpi orange"><h3>改善提案数</h3><h2>${recommendationCount}件</h2></div>
 </div>
 
 <div class="card">
