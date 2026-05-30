@@ -156,7 +156,9 @@ async function fetchGoogleAdsCampaigns90Days() {
       campaign.status,
       metrics.impressions,
       metrics.clicks,
-      metrics.ctr
+      metrics.ctr,
+      metrics.cost_micros,
+      metrics.conversions
     FROM campaign
     WHERE segments.date BETWEEN '${formatDate(startDate)}' AND '${formatDate(endDate)}'
       AND campaign.status = 'ENABLED'
@@ -218,8 +220,8 @@ app.get('/sync-google-ads', async (req, res) => {
       clicks: Number(item.metrics.clicks || 0),
       impressions: Number(item.metrics.impressions || 0),
       ctr: Number(item.metrics.ctr || 0),
-      cost: 0,
-      conversions: 0,
+      cost: Number(item.metrics.costMicros || 0) / 1000000,
+      conversions: Number(item.metrics.conversions || 0),
       report_date: item.segments.date
     }))
 
